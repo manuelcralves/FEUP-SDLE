@@ -11,42 +11,68 @@ def save_json(filepath, data):
     with open(filepath, "w") as file:
         json.dump(data, file, indent=4)
 
+def get_items_in_list(list_id):
+    lists_data = load_json(lists_file)
+    for lst in lists_data["lists"]:
+        if lst["id"] == list_id:
+            return lst["items"]
+    print(f"Error: List '{list_id}' not found.")
+    return []
+
+def get_total_price_of_list(list_id):
+    lists_data = load_json(lists_file)
+    for lst in lists_data["lists"]:
+        if lst["id"] == list_id:
+            return lst["total_price"]
+    print(f"Error: List '{list_id}' not found.")
+    return 0.0
+
+def get_item_price(item_id):
+    items_data = load_json(items_file)
+    item = next((item for item in items_data["items"] if item["id"] == item_id), None)
+    if item:
+        return item["price"]
+    print(f"Error: Item '{item_id}' not found.")
+    return 0.0
+
+def get_item_stock(item_id):
+    items_data = load_json(items_file)
+    item = next((item for item in items_data["items"] if item["id"] == item_id), None)
+    if item:
+        return item["stock"]
+    print(f"Error: Item '{item_id}' not found.")
+    return 0
+
 def add_item_to_list(list_id, item_id):
     items_data = load_json(items_file)
     lists_data = load_json(lists_file)
     
-    # Find the item by ID
     item = next((item for item in items_data["items"] if item["id"] == item_id), None)
     if item is None:
         print(f"Error: Item '{item_id}' not found.")
         return
     
-    # Check if there's enough stock
     if item["stock"] <= 0:
         print(f"Error: Item '{item_id}' is out of stock.")
         return
     
-    # Find the list by ID
     for lst in lists_data["lists"]:
         if lst["id"] == list_id:
-            # Add the item to the list
             lst["items"].append(item_id)
             lst["total_price"] += item["price"]
-            item["stock"] -= 1  # Reduce the stock
+            item["stock"] -= 1
             print(f"Item '{item_id}' added to list '{list_id}'. Remaining stock: {item['stock']}.")
             break
     else:
-        # List does not exist, create a new one
         new_list = {
             "id": list_id,
             "items": [item_id],
             "total_price": item["price"]
         }
         lists_data["lists"].append(new_list)
-        item["stock"] -= 1  # Reduce the stock
+        item["stock"] -= 1
         print(f"List '{list_id}' created and item '{item_id}' added. Remaining stock: {item['stock']}.")
 
-    # Save changes to JSON files
     save_json(lists_file, lists_data)
     save_json(items_file, items_data)
 
@@ -54,19 +80,17 @@ def remove_item_from_list(list_id, item_id):
     items_data = load_json(items_file)
     lists_data = load_json(lists_file)
     
-    # Find the item by ID
     item = next((item for item in items_data["items"] if item["id"] == item_id), None)
     if item is None:
         print(f"Error: Item '{item_id}' not found.")
         return
 
-    # Find the list by ID
     for lst in lists_data["lists"]:
         if lst["id"] == list_id:
             if item_id in lst["items"]:
-                lst["items"].remove(item_id)  # Remove one occurrence of the item
+                lst["items"].remove(item_id)
                 lst["total_price"] -= item["price"]
-                item["stock"] += 1  # Restock the item
+                item["stock"] += 1
                 print(f"Item '{item_id}' removed from list '{list_id}'. Updated stock: {item['stock']}.")
             else:
                 print(f"Item '{item_id}' is not in list '{list_id}'.")
@@ -75,40 +99,33 @@ def remove_item_from_list(list_id, item_id):
         print(f"Error: List '{list_id}' not found.")
         return
 
-    # Save changes to JSON files
     save_json(lists_file, lists_data)
     save_json(items_file, items_data)
 
 def remove_list(list_id):
-    # Load JSON files
     lists_data = load_json(lists_file)
     items_data = load_json(items_file)
     
-    # Find the list by ID
     for lst in lists_data["lists"]:
         if lst["id"] == list_id:
-            # Update stock for all items in the list
             for item_id in lst["items"]:
-                # Find the item and update stock
                 item = next((item for item in items_data["items"] if item["id"] == item_id), None)
                 if item:
-                    item["stock"] += 1  # Increase stock for each occurrence of the item
+                    item["stock"] += 1
                     print(f"Stock for item '{item_id}' updated: {item['stock']}.")
-            
-            # Remove the list
             lists_data["lists"].remove(lst)
             print(f"List '{list_id}' removed successfully.")
             break
     else:
-        # List not found
         print(f"Error: List '{list_id}' not found.")
         return
 
-    # Save changes to JSON files
     save_json(lists_file, lists_data)
     save_json(items_file, items_data)
 
-# Test calls
-add_item_to_list(3, 2)  # Adds an item
-remove_item_from_list(3, 2)  # Removes one occurrence of the item
-#remove_list(3)  # Removes a list
+# Example Usage
+remove_list(3)  # Adds item 2 to list 3
+print(get_items_in_list(3))  # Gets all items in list 3
+print(get_total_price_of_list(3))  # Gets total price of list 3
+print(get_item_price(2))  # Gets the price of item 2
+print(get_item_stock(2))  # Gets the stock of item 2
