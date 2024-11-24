@@ -1,0 +1,26 @@
+{
+    "lists": [
+        {
+            "id": 1,
+            "items": [
+                2
+            ],
+            "total_price": 20.0
+        },
+        {
+            "id": 2,
+            "items": [
+                2,
+                3
+            ],
+            "total_price": 35.0
+        },
+        {
+            "id": 3,
+            "items": [
+                2
+            ],
+            "total_price": 20.0
+        }
+    ]
+}
