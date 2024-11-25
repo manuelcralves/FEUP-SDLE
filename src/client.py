@@ -45,11 +45,12 @@ def client():
             print("Invalid choice. Please try again.")
             continue
 
-        print(f"Sending request: {request}")
+        #print(f"\nSending request: {request}")
         socket.send_json(request)
 
         response = socket.recv_json()
-        print(f"Response: {response}")
+
+        print(f"{response['message']}")
 
 if __name__ == "__main__":
     client()

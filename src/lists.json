@@ -5,9 +5,10 @@
             "items": [
                 3,
                 3,
-                3
+                3,
+                1
             ],
-            "total_price": 45.0
+            "total_price": 55.0
         },
         {
             "id": 2,
