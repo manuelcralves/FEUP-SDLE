@@ -3,9 +3,11 @@
         {
             "id": 1,
             "items": [
-                2
+                3,
+                3,
+                3
             ],
-            "total_price": 20.0
+            "total_price": 45.0
         },
         {
             "id": 2,

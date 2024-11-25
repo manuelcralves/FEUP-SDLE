@@ -124,8 +124,8 @@ def remove_list(list_id):
     save_json(items_file, items_data)
 
 # Example Usage
-remove_list(3)  # Adds item 2 to list 3
-print(get_items_in_list(3))  # Gets all items in list 3
-print(get_total_price_of_list(3))  # Gets total price of list 3
-print(get_item_price(2))  # Gets the price of item 2
-print(get_item_stock(2))  # Gets the stock of item 2
+#remove_list(3)  # Adds item 2 to list 3
+#print(get_items_in_list(3))  # Gets all items in list 3
+#print(get_total_price_of_list(3))  # Gets total price of list 3
+#print(get_item_price(2))  # Gets the price of item 2
+#print(get_item_stock(2))  # Gets the stock of item 2

@@ -8,12 +8,12 @@
         {
             "id": 2,
             "price": 20.0,
-            "stock": 5
+            "stock": 6
         },
         {
             "id": 3,
             "price": 15.0,
-            "stock": 4
+            "stock": 1
         }
     ]
 }
