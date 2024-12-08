@@ -28,12 +28,26 @@ class LWW_Set:
         return timestamp
     
     def validate_element(self, element):
-        try:
-            element = str(element)
-        except:
-            raise ValueError("Element must be able to be converted to a String!")
+
+        #Check that elemen is a dict
+        if not isinstance(element, dict):
+            raise ValueError("Element must be a dictionary.")
+    
+        # Check for required keys
+        required_keys = {"Item", "Quantity"}
+        if not required_keys.issubset(element.keys()):
+            raise ValueError(f"Element must contain the keys: {required_keys}")
         
-        if sys.getsizeof(element) > self.MAX_STRING_IN_BYTES:
-            raise ValueError("Element string exceeds the maximum length in bytes: %s!"%self.MAX_STRING_IN_BYTES)
-        return element
+        # Validate the "Item" field
+        item = element.get("Item")
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError("The 'Item' field must be a non-empty string.")
+        
+        # Validate the "Quantity" field
+        quantity = element.get("Quantity")
+        if not isinstance(quantity, int) or quantity < 0:
+            raise ValueError("The 'Quantity' field must be a non-negative integer.")
+    
+    def merge(self, other_set):
+        raise NotImplementedError("Subclasses should implement this!")
 
