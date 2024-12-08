@@ -1,6 +1,8 @@
 import json
 import zmq
 import os
+import time
+import threading
 from read_lists_items import add_item_to_list, remove_item_from_list, get_items_in_list, get_total_price_of_list
 
 def display_menu():
@@ -18,29 +20,31 @@ def get_user_choice():
         print("Invalid input. Please enter a number between 1 and 5.")
         return -1
 
-def send_files_to_server():
-    try:
-        context = zmq.Context()
-        socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:5555")
+def send_files_to_server(queue):
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
 
-        with open("../client_database/items_details.json", "r") as items_file:
-            items_data = items_file.read()
-        with open("../client_database/lists.json", "r") as lists_file:
-            lists_data = lists_file.read()
-
-        request = {
-            "action": "update_files",
-            "items_data": items_data,
-            "lists_data": lists_data
-        }
-        socket.send_json(request)
-        response = socket.recv_json()
-        return response
-    except zmq.ZMQError:
-        return None
+    while True:
+        if queue:
+            request = queue[0]
+            try:
+                socket.send_json(request)
+                response = socket.recv_json()
+                if response["status"] == "success":
+                    queue.pop(0)
+                else:
+                    print("Failed to update server:", response["message"])
+            except zmq.ZMQError:
+                print("Server is offline. Queuing the actions.")
+                time.sleep(5)  
+        else:
+            time.sleep(1)  
 
 def client():
+    action_queue = []
+    threading.Thread(target=send_files_to_server, args=(action_queue,), daemon=True).start()
+
     while True:
         display_menu()
         choice = get_user_choice()
@@ -79,12 +83,22 @@ def client():
             break
         else:
             print("Invalid choice. Please try again.")
+            continue
 
-        response = send_files_to_server()
-        if response:
-            print("Server updated successfully.")
-        else:
-            print("Failed to update server. Changes will be queued.")
+        try:
+            with open("../client_database/items_details.json", "r") as items_file:
+                items_data = items_file.read()
+            with open("../client_database/lists.json", "r") as lists_file:
+                lists_data = lists_file.read()
+
+            request = {
+                "action": "update_files",
+                "items_data": items_data,
+                "lists_data": lists_data
+            }
+            action_queue.append(request)
+        except Exception as e:
+            print(f"Error reading files: {e}")
 
 if __name__ == "__main__":
     client()

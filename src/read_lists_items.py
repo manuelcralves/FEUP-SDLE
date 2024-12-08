@@ -155,4 +155,4 @@ def remove_list(list_id):
 #print(get_item_price(2))  # Gets the price of item 2
 #print(get_item_stock(2))  # Gets the stock of item 2
 #add_item_to_list(1, 3, 2)  # Adds 2 units of item 2 to list 3
-remove_item_from_list(1, 3, 2)  # Removes 2 units of item 2 from list 3
+#remove_item_from_list(1, 3, 2)  # Removes 2 units of item 2 from list 3
