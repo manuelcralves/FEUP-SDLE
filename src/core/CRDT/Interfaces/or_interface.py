@@ -1,31 +1,25 @@
-import sys
-
-# Credits to @junjizhi for the model of the interface!
-class LWW_Set:
-    
-    MAX_STRING_IN_BYTES = 1 << 29  # 512 MB
+class OR_Set:
 
     def __init__(self):
         pass
 
-    def validate_element(self, element):
+    def add(load, element, tag):
         raise NotImplementedError("Subclasses should implement this!")
     
-    def validate_timestamp(self,timestamp):
+    def remove(loadA, loadR, element):
         raise NotImplementedError("Subclasses should implement this!")
     
-    def add(self, element, timestamp):
-        raise NotImplementedError("Subclasses should implement this!")
-
-    def remove(self,element,timestamp):
+    def compare(load1, load2):
         raise NotImplementedError("Subclasses should implement this!")
     
-    def exist(self, element):
+    def merge(load1,load2):
         raise NotImplementedError("Subclasses should implement this!")
     
-    def get(self):
+    def display(name, load):
         raise NotImplementedError("Subclasses should implement this!")
     
-    def merge(self, other_set):
+    def query(element, load):
         raise NotImplementedError("Subclasses should implement this!")
-
+    
+    def validate_element(element):
+        raise NotImplementedError("Subclasses should implement this!")
