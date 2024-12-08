@@ -1,40 +1,41 @@
 import zmq
 import json
-import read_lists_items
+import time
 
-def handle_request(request):
-    action = request.get("action")
-    list_id = request.get("list_id")
-    item_id = request.get("item_id")
-
+def update_files(items_data, lists_data):
     try:
-        if action == "add_item":
-            result = read_lists_items.add_item_to_list(list_id, item_id)
-            return {"status": "success", "message": f"Item {item_id} was successfully added to list {list_id}."} if not result else {"status": "error", "message": result}
-        elif action == "remove_item":
-            result = read_lists_items.remove_item_from_list(list_id, item_id)
-            return {"status": "success", "message": f"Item {item_id} was successfully removed from list {list_id}."} if not result else {"status": "error", "message": result}
-        elif action == "get_items":
-            items = read_lists_items.get_items_in_list(list_id)
-            if items:
-                return {"status": "success", "message": f"Items in list {list_id}: {items}"}
-            else:
-                return {"status": "error", "message": f"No items found in list {list_id}."}
-        elif action == "get_total_price":
-            total_price = read_lists_items.get_total_price_of_list(list_id)
-            return {"status": "success", "message": f"The total price of list {list_id} is ${total_price:.2f}."}
-        else:
-            return {"status": "error", "message": "Invalid action. Please try again."}
+        with open("../server_database/items_details.json", "w") as items_file:
+            items_file.write(items_data)
+        with open("../server_database/lists.json", "w") as lists_file:
+            lists_file.write(lists_data)
+        return {"status": "success", "message": "Files updated successfully."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+def handle_request(request):
+    action = request.get("action")
+
+    if action == "update_files":
+        items_data = request.get("items_data")
+        lists_data = request.get("lists_data")
+        return update_files(items_data, lists_data)
+    else:
+        return {"status": "error", "message": "Invalid action. Please try again."}
 
 context = zmq.Context()
-socket = context.socket(zmq.REP)  
-socket.connect("tcp://localhost:5556")  
+socket = context.socket(zmq.REP)
+socket.connect("tcp://localhost:5556")
 
-while True:
-    message = socket.recv_json()  
-    #print("Server received:", message)
-    response = handle_request(message)  
-    socket.send_json(response)  
+try:
+    while True:
+        if socket.poll(timeout=1000):  
+            message = socket.recv_json()
+            response = handle_request(message)
+            socket.send_json(response)
+        else:
+            time.sleep(1)  
+except KeyboardInterrupt:
+    print("Server is shutting down...")
+finally:
+    socket.close()
+    context.term()
