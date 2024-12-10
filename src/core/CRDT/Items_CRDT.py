@@ -62,6 +62,7 @@ class Items_CRDT(LWW_Set):
                 current_timestamp = self.add_set[element["Item"]]["timestamp"]
                 if current_timestamp < timestamp:
                     self.add_set[element["Item"]]["timestamp"] = timestamp
+                    self.add_set[element["Item"]]["Quantity"] = element["Quantity"]
                 elif current_timestamp == timestamp:
                     self.add_set[element["Item"]]["timestamp"] = timestamp
             else:
@@ -90,6 +91,7 @@ class Items_CRDT(LWW_Set):
                 current_timestamp = self.remove_set_set[element["Item"]]["timestamp"]
                 if current_timestamp < timestamp:
                     self.remove_set[element["Item"]]["timestamp"] = timestamp
+                    self.add_set[element["Item"]]["Quantity"] = element["Quantity"]
             else:
                 self.remove_set[element["Item"]] = {"Quantity": element["Quantity"], "timestamp": timestamp}
         except:
