@@ -11,8 +11,6 @@ class List_CRDT(OR_Set):
         self.remove_lock = RLock()
         self.items = {}
 
-
-
     """
         Element Structure:
         id: (id of the list)
@@ -24,12 +22,14 @@ class List_CRDT(OR_Set):
 
         self.add_lock.acquire()
         try:
+            self.validate_element(element)
             if element["id"] not in self.add_set:
                 self.add_set[element["id"]] = element
                 self.items[element["id"]] = Items_CRDT()
             else:
                 return_flag = False
-        except:
+        except Exception as e:
+            print(e)
             return_flag = False
         finally:
             self.add_lock.release()
@@ -40,7 +40,8 @@ class List_CRDT(OR_Set):
         return_flag = True
         try:
             self.items[list_id].add(element,timestamp)
-        except:
+        except Exception as e:
+            print(e)
             return_flag = False
         
         return return_flag
@@ -90,7 +91,7 @@ class List_CRDT(OR_Set):
 
         return return_flag
     
-    def validate_element(element):
+    def validate_element(self, element):
 
         if not isinstance(element, dict):
             raise ValueError("Element must be a dictionary.")
@@ -104,9 +105,25 @@ class List_CRDT(OR_Set):
             raise ValueError("'id' must be a non-empty string or an integer.")
         
         items = element.get("items")
-        if not isinstance(items, list) or not all(isinstance(item, str) and item.strip() for item in items):
-            raise ValueError("'items' must be a list of non-empty strings.")
+        #print(f"Validating items: {items} ({type(items)})")  # Debug: print items and type
+        if not isinstance(items, list):
+            raise ValueError("'items' must be a list.")
         
+        for item in items:
+            # print(f"Validating item: {item} ({type(item)})")  # Debug: print each item and type
+            if isinstance(item, dict):
+                # Ensure the dictionary has required keys
+                if not {"Item", "Quantity"}.issubset(item.keys()):
+                    raise ValueError(f"Item {item} must contain 'Item' and 'Quantity' keys.")
+                if not isinstance(item["Item"], (str, int)) or (isinstance(item["Item"], str) and not item["Item"].strip()):
+                    raise ValueError(f"Item 'Item' field must be a non-empty string or integer in {item}.")
+                if not isinstance(item["Quantity"], int) or item["Quantity"] <= 0:
+                    raise ValueError(f"Item 'Quantity' field must be a positive integer in {item}.")
+            elif isinstance(item, (str, int)):
+                continue  # Allow plain strings/integers as valid items
+            else:
+                raise ValueError(f"Item '{item}' must be a dictionary, string, or integer.")
+            
         total_price = element.get("total_price")
         if not isinstance(total_price, (int, float)) or total_price < 0:
             raise ValueError("'total_price' must be a non-negative number.")

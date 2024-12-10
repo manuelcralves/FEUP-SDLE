@@ -80,7 +80,7 @@ def test_conflicting_operations(list_crdt):
     log("Testing Conflicting Operations...")
 
     list_crdt.add_item(1, {"Item": "3", "Quantity": 1}, timestamp=1)  # Earlier timestamp
-    list_crdt.add_item(1, {"Item": "3", "Quantity": 2}, timestamp=1)  # Later timestamp
+    list_crdt.add_item(1, {"Item": "3", "Quantity": 2}, timestamp=2)  # Later timestamp
     log_crdt_state(list_crdt, "After conflicting adds to item 3 in list 1.")
 
     list_crdt.remove_item(1, {"Item": "3", "Quantity": 1}, timestamp=3)  # Later timestamp
