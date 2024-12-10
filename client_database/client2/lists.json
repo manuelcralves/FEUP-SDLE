@@ -1,14 +1,9 @@
 {
     "lists": [
         {
-            "id": "0a68b8af-5ba2-43a1-b054-c0d5901b0264",
-            "name": "hello",
-            "items": [
-                {
-                    "Item": "koli",
-                    "Quantity": 302
-                }
-            ]
+            "id": "6a751062-f7e0-438f-9381-ac883db38b1d",
+            "name": "compras",
+            "items": []
         }
     ]
 }

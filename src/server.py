@@ -64,8 +64,22 @@ def handle_request(request):
         list_id = request.get("list_id")
         list_data = request.get("list_data")
         return update_list_on_server(list_id, list_data)
+    elif action == "join_list":
+        list_id = request.get("list_id")
+        return join_list_on_server(list_id)
     else:
         return {"status": "error", "message": "Invalid action. Please try again."}
+
+def join_list_on_server(list_id):
+    try:
+        with open("../server_database/lists.json", "r") as lists_file:
+            existing_data = json.load(lists_file)
+            for lst in existing_data["lists"]:
+                if lst["id"] == list_id:
+                    return {"status": "success", "list_data": lst}
+            return {"status": "error", "message": f"List with ID '{list_id}' not found."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 def remove_list_from_server(list_name):
     try:

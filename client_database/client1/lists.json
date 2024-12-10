@@ -1,29 +1,11 @@
 {
     "lists": [
         {
-            "id": "92ea636a-63ad-446d-b090-f6fe3a4174e6",
-            "name": "hello",
-            "items": [
-                {
-                    "Item": "banana",
-                    "Quantity": 6
-                },
-                {
-                    "Item": "maca",
-                    "Quantity": 10
-                },
-                {
-                    "Item": "papap",
-                    "Quantity": 20
-                }
-            ]
-        },
-        {
-            "id": "f948d60e-6321-4551-afd4-2b82cdc24e98",
+            "id": "4b200b20-861e-4d58-8c38-b0918d04fc0b",
             "name": "natal",
             "items": [
                 {
-                    "Item": "prenda",
+                    "Item": "banana",
                     "Quantity": 1
                 }
             ]
