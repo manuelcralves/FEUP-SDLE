@@ -1,34 +1,13 @@
 {
     "lists": [
         {
-            "id": 1,
+            "id": "compras",
             "items": [
-                3,
-                1
-            ],
-            "total_price": 65.0
-        },
-        {
-            "id": 2,
-            "items": [
-                3,
-                3
-            ],
-            "total_price": 30.0
-        },
-        {
-            "id": 3,
-            "items": [
-                3
-            ],
-            "total_price": 15.0
-        },
-        {
-            "id": 4,
-            "items": [
-                2
-            ],
-            "total_price": 20.0
+                {
+                    "Item": "banana",
+                    "Quantity": 20
+                }
+            ]
         }
     ]
 }

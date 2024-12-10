@@ -11,8 +11,7 @@
                     "Item": "3",
                     "Quantity": 3
                 }
-            ],
-            "total_price": 0
+            ]
         },
         {
             "id": 2,
@@ -25,8 +24,7 @@
                     "Item": "3",
                     "Quantity": 1
                 }
-            ],
-            "total_price": 0
+            ]
         }
     ]
 }
