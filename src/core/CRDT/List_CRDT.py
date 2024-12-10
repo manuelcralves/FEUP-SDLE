@@ -19,14 +19,16 @@ class List_CRDT(OR_Set):
         items: [] (array of item elements)
         total_price: (price) 
     """
-
     def add(self, element):
         return_flag = True
 
         self.add_lock.acquire()
         try:
-            self.add_set.add(element)
-            self.items[element["id"]] = Items_CRDT()
+            if element["id"] not in self.add_set:
+                self.add_set[element["id"]] = element
+                self.items[element["id"]] = Items_CRDT()
+            else:
+                return_flag = False
         except:
             return_flag = False
         finally:
