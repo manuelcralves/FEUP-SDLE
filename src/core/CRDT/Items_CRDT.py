@@ -60,11 +60,9 @@ class Items_CRDT(LWW_Set):
         try:
             if element["Item"] in self.add_set:
                 current_timestamp = self.add_set[element["Item"]]["timestamp"]
-                if current_timestamp < timestamp:
+                if current_timestamp <= timestamp:
                     self.add_set[element["Item"]]["timestamp"] = timestamp
                     self.add_set[element["Item"]]["Quantity"] = element["Quantity"]
-                elif current_timestamp == timestamp:
-                    self.add_set[element["Item"]]["timestamp"] = timestamp
             else:
                 self.add_set[element["Item"]] = {"Quantity": element["Quantity"], "timestamp": timestamp}
         except:
