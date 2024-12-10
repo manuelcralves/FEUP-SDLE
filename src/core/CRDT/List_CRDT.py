@@ -7,8 +7,6 @@ class List_CRDT(OR_Set):
     def __init__(self):
         self.add_set = {}
         self.remove_set = {}
-        self.add_lock = RLock()
-        self.remove_lock = RLock()
         self.items = {}
 
     """
@@ -20,7 +18,6 @@ class List_CRDT(OR_Set):
     def add(self, element):
         return_flag = True
 
-        self.add_lock.acquire()
         try:
             self.validate_element(element)
             if element["id"] not in self.add_set:
@@ -31,8 +28,6 @@ class List_CRDT(OR_Set):
         except Exception as e:
             print(e)
             return_flag = False
-        finally:
-            self.add_lock.release()
 
         return return_flag
     
@@ -49,13 +44,10 @@ class List_CRDT(OR_Set):
     def remove(self, element):
         return_flag = True
 
-        self.remove_lock.acquire()
         try:
             self.remove_set.add(element)
         except:
             return_flag = False
-        finally:
-            self.remove_lock.release()
 
         return return_flag
     
@@ -71,9 +63,6 @@ class List_CRDT(OR_Set):
     def merge(self,other_set):
         return_flag = True
 
-        self.add_lock.acquire()
-        self.remove_lock.acquire()
-
         try:
             self.add_set = self.add_set.union(other_set.add_set)
             self.remove_set = self.remove_set.union(other_set.remove_set)
@@ -85,9 +74,6 @@ class List_CRDT(OR_Set):
                     self.items[list_id] = items
         except:
             return_flag = False
-        finally:
-            self.add_lock.release()
-            self.remove_lock.release()
 
         return return_flag
     

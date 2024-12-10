@@ -1,4 +1,3 @@
-from threading import *
 from core.CRDT.Interfaces.lww_interface import LWW_Set
 
 class Items_CRDT(LWW_Set):
@@ -13,8 +12,6 @@ class Items_CRDT(LWW_Set):
     def __init__(self):
         self.add_set = {}
         self.remove_set = {}
-        self.add_lock = RLock()
-        self.remove_lock = RLock()
 
     def validate_timestamp(self, timestamp):
         try:
@@ -60,21 +57,16 @@ class Items_CRDT(LWW_Set):
         
         return_flag = True
 
-        self.add_lock.acquire()
-
         try:
             if element["Item"] in self.add_set:
                 current_timestamp = self.add_set[element["Item"]]["timestamp"]
-                if current_timestamp < timestamp:
+                if current_timestamp <= timestamp:
                     self.add_set[element["Item"]]["timestamp"] = timestamp
-                elif current_timestamp == timestamp:
-                    self.add_set[element["Item"]]["timestamp"] = timestamp
+                    self.add_set[element["Item"]]["Quantity"] = element["Quantity"]
             else:
                 self.add_set[element["Item"]] = {"Quantity": element["Quantity"], "timestamp": timestamp}
         except:
             return_flag = False
-        finally:
-            self.add_lock.release()
 
         return return_flag
 
@@ -92,19 +84,16 @@ class Items_CRDT(LWW_Set):
 
         return_flag = True
 
-        self.remove_lock.acquire()
-
         try:
             if element["Item"] in self.remove_set:
                 current_timestamp = self.remove_set_set[element["Item"]]["timestamp"]
                 if current_timestamp < timestamp:
                     self.remove_set[element["Item"]]["timestamp"] = timestamp
+                    self.add_set[element["Item"]]["Quantity"] = element["Quantity"]
             else:
                 self.remove_set[element["Item"]] = {"Quantity": element["Quantity"], "timestamp": timestamp}
         except:
             return_flag = False
-        finally:
-            self.remove_lock.release()
         
         return return_flag
 
@@ -130,8 +119,6 @@ class Items_CRDT(LWW_Set):
     def merge(self, other_set):
 
         return_flag = True
-        
-        self.add_lock.acquire()
 
         try:
             for item, value in other_set.add_set.items():
@@ -144,10 +131,7 @@ class Items_CRDT(LWW_Set):
                     self.add_set[item] = {"Quantity": quantity, "timestamp": timestamp}
         except:
             return_flag = False
-        finally:
-            self.add_lock.release()
 
-        self.remove_lock.acquire()
         try:
             for item, value in other_set.remove_set.items():
                 quantity = value["Quantity"]
@@ -159,11 +143,7 @@ class Items_CRDT(LWW_Set):
                     self.remove_set[item] = {"Quantity": quantity, "timestamp": timestamp}
         except:
             return_flag = False
-        finally:
-            self.remove_lock.release()
 
-        self.add_lock.acquire()
-        self.remove_lock.acquire()
         try:
             for item, value in list(self.add_set.items()):
                 if item in self.remove_set:
@@ -171,8 +151,5 @@ class Items_CRDT(LWW_Set):
                         del self.remove_set[item]
         except:
             return_flag = False
-        finally:
-            self.add_lock.release()
-            self.remove_lock.release()
 
         return return_flag
