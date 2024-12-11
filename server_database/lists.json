@@ -1,24 +1,3 @@
 {
-    "lists": [
-        {
-            "id": "14d65275-6204-49ac-a941-91505d67ade4",
-            "name": "natal",
-            "items": [
-                {
-                    "Item": "teste",
-                    "Quantity": 20
-                }
-            ]
-        },
-        {
-            "id": "9ddb750c-4d62-417d-b643-7c0eeb978daa",
-            "name": "compras",
-            "items": [
-                {
-                    "Item": "prenda",
-                    "Quantity": 10
-                }
-            ]
-        }
-    ]
+    "lists": []
 }

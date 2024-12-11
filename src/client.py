@@ -64,6 +64,8 @@ def poll_for_updates(socket, lists_file):
                     thread = threading.Thread(target=poll_single_list, args=(list_id, socket, lists_file, stop_event), daemon=True)
                     thread.start()
                     polling_threads[list_id] = (thread, stop_event)
+                    
+                time.sleep(2)
                 
                 removed_lists = known_lists - current_lists
                 for list_id in removed_lists:

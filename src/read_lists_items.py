@@ -37,7 +37,7 @@ def create_list(list_name, lists_file):
     lists_data = load_json(lists_file)
 
     for lst in lists_data["lists"]:
-        if lst["name"] == str(list_name):
+        if str(lst["name"]) == str(list_name):
             return -1, f"List name '{list_name}' already exists."
 
     new_list = {"id": str(uuid.uuid4()), "name": str(list_name), "items": []}
@@ -67,14 +67,10 @@ def remove_item_from_list(list_name, item_id, lists_file, quantity=1):
         if lst["name"] == str(list_name):
             for item in lst["items"]:
                 if item["Item"] == str(item_id):
-                    if item["Quantity"] > quantity:
+                    if item["Quantity"] >= quantity:
                         item["Quantity"] -= quantity
                         save_json(lists_file, lists_data)
                         return 0, f"{quantity} units of item '{item_id}' removed from list '{list_name}'."
-                    elif item["Quantity"] == quantity:
-                        lst["items"].remove(item)
-                        save_json(lists_file, lists_data)
-                        return 0, f"Item '{item_id}' removed entirely from list '{list_name}'."
                     else:
                         return -1, f"Cannot remove {quantity} units. Only {item['Quantity']} available."
             return -1, f"Item '{item_id}' not found in list '{list_name}'."
