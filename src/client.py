@@ -124,6 +124,8 @@ def client(client_name):
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
+    
+    time.sleep(2)
     threading.Thread(target=send_files_to_server, args=(action_queue, socket), daemon=True).start()
     threading.Thread(target=poll_for_updates, args=(socket, lists_file), daemon=True).start()
 
