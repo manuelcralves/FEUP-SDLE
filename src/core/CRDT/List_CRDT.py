@@ -90,8 +90,14 @@ class List_CRDT(OR_Set):
 
         return return_flag
     
-    def get(self):
+    def get_list(self):
+        set = []
+        for item in self.items.get():
+            if item["Item"] not in self.remove_set:
+                set.append(item)
         
+        return set
+
 
         
 
