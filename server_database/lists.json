@@ -1,19 +1,24 @@
 {
     "lists": [
         {
-            "id": "4b200b20-861e-4d58-8c38-b0918d04fc0b",
+            "id": "14d65275-6204-49ac-a941-91505d67ade4",
             "name": "natal",
             "items": [
                 {
-                    "Item": "banana",
-                    "Quantity": 1
+                    "Item": "teste",
+                    "Quantity": 20
                 }
             ]
         },
         {
-            "id": "6a751062-f7e0-438f-9381-ac883db38b1d",
+            "id": "9ddb750c-4d62-417d-b643-7c0eeb978daa",
             "name": "compras",
-            "items": []
+            "items": [
+                {
+                    "Item": "prenda",
+                    "Quantity": 10
+                }
+            ]
         }
     ]
 }
