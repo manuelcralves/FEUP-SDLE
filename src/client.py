@@ -108,7 +108,7 @@ def poll_single_list(list_id, socket, lists_file, stop_event):
                     file.seek(0)
                     file.truncate()
                     json.dump(lists_data, file, indent=4)
-                print(f"List with ID '{list_id}' has been removed from the server.")
+                #print(f"List with ID '{list_id}' has been removed from the server.")
                 break
             else:
                 print(f"No updates for list with ID '{list_id}'.")
@@ -125,135 +125,201 @@ def client(client_name):
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
     
+    ping_message = {"action": "ping"}
+    
+    try:
+        socket.send_json(ping_message)
+        if socket.poll(2000): 
+            response = socket.recv_json()
+            if response["status"] != "success":
+                print("Server is offline. Please try again later.")
+                return
+        else:
+            print("Server is offline. Please try again later.")
+            return
+    except zmq.ZMQError:
+        print("Server is offline. Please try again later.")
+        return
+    
+    registration_message = {
+        "action": "register_client",
+        "client_name": client_name
+    }
+    
+    try:
+        socket.send_json(registration_message)
+        if socket.poll(2000):  
+            response = socket.recv_json()
+            if response["status"] != "success":
+                print(f"Failed to register client: {response['message']}")
+                return
+        else:
+            print("Server is offline. Please try again later.")
+            return
+    except zmq.ZMQError:
+        print("Server is offline. Please try again later.")
+        return
+    
     time.sleep(2)
     threading.Thread(target=send_files_to_server, args=(action_queue, socket), daemon=True).start()
     threading.Thread(target=poll_for_updates, args=(socket, lists_file), daemon=True).start()
 
-    while True:
-        display_menu()
-        choice = get_user_choice()
+    try:
+        while True:
+            display_menu()
+            choice = get_user_choice()
 
-        if choice == 1:  
-            list_name = input("Enter List Name: ")
-            item_id = input("Enter Item: ")
-            quantity = int(input("Enter Quantity: "))
-            status, result = add_new_item(list_name, item_id, lists_file, quantity)
-            if status == 0:
-                print(result)
-                try:
-                    with open(lists_file, "r") as file:
-                        lists_data = json.load(file)
-                        list_data = next(lst for lst in lists_data["lists"] if lst["name"] == list_name)
-                        
-                        request = {
-                            "action": "update_list",
-                            "list_id": list_data["id"],
-                            "list_data": list_data
-                        }
-                        action_queue.append(request)
-                except Exception as e:
-                    print(f"Error reading lists.json: {e}")
-            else:
-                print(f"Error: {result}")
-        elif choice == 2:  
-            list_name = input("Enter List Name: ")
-            item_id = input("Enter Item: ")
-            quantity = int(input("Enter Quantity: "))
-            status, result = remove_item_from_list(list_name, item_id, lists_file, quantity)
-            if status == 0:
-                print(result)
-                try:
-                    with open(lists_file, "r") as file:
-                        lists_data = json.load(file)
-                        list_data = next(lst for lst in lists_data["lists"] if lst["name"] == list_name)
-                        
-                        request = {
-                            "action": "update_list",
-                            "list_id": list_data["id"],
-                            "list_data": list_data
-                        }
-                        action_queue.append(request)
-                except Exception as e:
-                    print(f"Error reading lists.json: {e}")
-            else:
-                print(f"Error: {result}")
-        elif choice == 3:
-            list_name = input("Enter List Name: ")
-            status, result = get_items_in_list(list_name, lists_file)
-            if status == 0:
-                print(f"Items in List {list_name}:\n{result}")
-            else:
-                print(f"Error: {result}")
-        elif choice == 4:  
-            list_name = input("Enter New List Name: ")
-            status, result = create_list(list_name, lists_file)
-            if status == 0:
-                print(result)
-                try:
-                    with open(lists_file, "r") as file:
-                        lists_data = json.load(file)
-                        new_list = next(lst for lst in lists_data["lists"] if lst["name"] == list_name)
-                        
-                        request = {
-                            "action": "create_list",
-                            "list_data": new_list
-                        }
-                        action_queue.append(request)
-                except Exception as e:
-                    print(f"Error reading lists.json: {e}")
-            else:
-                print(f"Error: {result}")
-        elif choice == 5:  
-            list_name = input("Enter List Name: ")
-            status, result = remove_list(list_name, lists_file)
-            if status == 0:
-                print(result)
-                request = {
-                    "action": "remove_list",
-                    "list_name": list_name
-                }
-                action_queue.append(request)
-            else:
-                print(f"Error: {result}")
-        elif choice == 6:  
-            list_id = input("Enter List ID: ")
-            try:
-                with open(lists_file, "r") as file:
-                    lists_data = json.load(file)
-                    if any(lst["id"] == list_id for lst in lists_data["lists"]):
-                        print(f"List with ID '{list_id}' is already in the local database.")
-                        continue
-            except Exception as e:
-                print(f"Error reading lists.json: {e}")
-                continue
-        
-            request = {
-                "action": "join_list",
-                "list_id": list_id
-            }
-            try:
-                socket.send_json(request)
-                response = socket.recv_json()
-                if response["status"] == "success":
-                    new_list = response["list_data"]
-                    while any(lst["name"] == new_list["name"] for lst in lists_data["lists"]):
-                        new_list["name"] = input(f"List name '{new_list['name']}' already exists. Enter a new name: ")
-                    with open(lists_file, "r+") as file:
-                        lists_data = json.load(file)
-                        lists_data["lists"].append(new_list)
-                        file.seek(0)
-                        json.dump(lists_data, file, indent=4)
-                    print(f"List with ID '{list_id}' joined successfully.")
+            if choice == 1:  
+                list_name = input("Enter List Name: ")
+                item_id = input("Enter Item: ")
+                quantity = int(input("Enter Quantity: "))
+                status, result = add_new_item(list_name, item_id, lists_file, quantity)
+                if status == 0:
+                    print(result)
+                    try:
+                        with open(lists_file, "r") as file:
+                            lists_data = json.load(file)
+                            list_data = next(lst for lst in lists_data["lists"] if lst["name"] == list_name)
+                            
+                            request = {
+                                "action": "update_list",
+                                "list_id": list_data["id"],
+                                "list_data": list_data
+                            }
+                            action_queue.append(request)
+                    except Exception as e:
+                        print(f"Error reading lists.json: {e}")
                 else:
-                    print(f"Error: {response['message']}")
-            except Exception as e:
-                print(f"Error joining list: {e}")
-        elif choice == 7:  
-            print("Exiting...")
-            break
+                    print(f"Error: {result}")
+            elif choice == 2:  
+                list_name = input("Enter List Name: ")
+                item_id = input("Enter Item: ")
+                quantity = int(input("Enter Quantity: "))
+                status, result = remove_item_from_list(list_name, item_id, lists_file, quantity)
+                if status == 0:
+                    print(result)
+                    try:
+                        with open(lists_file, "r") as file:
+                            lists_data = json.load(file)
+                            list_data = next(lst for lst in lists_data["lists"] if lst["name"] == list_name)
+                            
+                            request = {
+                                "action": "update_list",
+                                "list_id": list_data["id"],
+                                "list_data": list_data
+                            }
+                            action_queue.append(request)
+                    except Exception as e:
+                        print(f"Error reading lists.json: {e}")
+                else:
+                    print(f"Error: {result}")
+            elif choice == 3:
+                list_name = input("Enter List Name: ")
+                status, result = get_items_in_list(list_name, lists_file)
+                if status == 0:
+                    print(f"Items in List {list_name}:\n{result}")
+                else:
+                    print(f"Error: {result}")
+            elif choice == 4:  
+                list_name = input("Enter New List Name: ")
+                status, result = create_list(list_name, lists_file)
+                if status == 0:
+                    print(result)
+                    try:
+                        with open(lists_file, "r") as file:
+                            lists_data = json.load(file)
+                            new_list = next(lst for lst in lists_data["lists"] if lst["name"] == list_name)
+                            
+                            request = {
+                                "action": "create_list",
+                                "list_data": new_list
+                            }
+                            action_queue.append(request)
+                    except Exception as e:
+                        print(f"Error reading lists.json: {e}")
+                else:
+                    print(f"Error: {result}")
+            elif choice == 5:  
+                list_name = input("Enter List Name: ")
+                status, result = remove_list(list_name, lists_file)
+                if status == 0:
+                    print(result)
+                    request = {
+                        "action": "remove_list",
+                        "list_name": list_name
+                    }
+                    action_queue.append(request)
+                else:
+                    print(f"Error: {result}")
+            elif choice == 6:  
+                list_id = input("Enter List ID: ")
+                try:
+                    with open(lists_file, "r") as file:
+                        lists_data = json.load(file)
+                        if any(lst["id"] == list_id for lst in lists_data["lists"]):
+                            print(f"List with ID '{list_id}' is already in the local database.")
+                            continue
+                except Exception as e:
+                    print(f"Error reading lists.json: {e}")
+                    continue
+            
+                request = {
+                    "action": "join_list",
+                    "list_id": list_id
+                }
+                try:
+                    socket.send_json(request)
+                    response = socket.recv_json()
+                    if response["status"] == "success":
+                        new_list = response["list_data"]
+                        while any(lst["name"] == new_list["name"] for lst in lists_data["lists"]):
+                            new_list["name"] = input(f"List name '{new_list['name']}' already exists. Enter a new name: ")
+                        with open(lists_file, "r+") as file:
+                            lists_data = json.load(file)
+                            lists_data["lists"].append(new_list)
+                            file.seek(0)
+                            json.dump(lists_data, file, indent=4)
+                        print(f"List with ID '{list_id}' joined successfully.")
+                    else:
+                        print(f"Error: {response['message']}")
+                except Exception as e:
+                    print(f"Error joining list: {e}")
+            elif choice == 7:  
+                print("Exiting...")
+                disconnect_message = {
+                    "action": "disconnect_client",
+                    "client_name": client_name
+                }
+                try:
+                    socket.send_json(disconnect_message)
+                    if socket.poll(2000): 
+                        response = socket.recv_json()
+                        if response["status"] == "success":
+                            print(f"Client '{client_name}' disconnected successfully.")
+                        else:
+                            print(f"Failed to disconnect client: {response['message']}")
+                    else:
+                        print("No response from server. Exiting...")
+                except zmq.ZMQError:
+                    print("Error sending disconnect message.")
+                break
+            else:
+                print("Invalid choice. Please try again.")
+                continue
+    except KeyboardInterrupt:
+        disconnect_message = {
+            "action": "disconnect_client",
+            "client_name": client_name
+        }
+        socket.send_json(disconnect_message)
+        response = socket.recv_json()
+        if response["status"] == "success":
+            print(f"Client '{client_name}' disconnected successfully.")
         else:
-            print("Invalid choice. Please try again.")
-            continue
+            print(f"Failed to disconnect client: {response['message']}")
+    finally:
+        socket.close()
+        context.term()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

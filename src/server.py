@@ -2,6 +2,7 @@ import zmq
 import json
 import time
 import os
+import threading
 
 def initialize_database(filepath):
     if not os.path.exists(filepath):
@@ -51,10 +52,28 @@ def update_list_on_server(list_id, list_data):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+connected_clients = []
+
 def handle_request(request):
     action = request.get("action")
 
-    if action == "remove_list":
+    if action == "ping":
+        return {"status": "success", "message": "Server is alive"}
+    elif action == "register_client":
+        client_name = request.get("client_name")
+        if client_name not in connected_clients:
+            connected_clients.append(client_name)
+            response = {"status": "success", "message": f"Client '{client_name}' registered successfully."}
+        else:
+            response = {"status": "error", "message": f"Client '{client_name}' is already registered."}
+    elif action == "disconnect_client":
+        client_name = request.get("client_name")
+        if client_name in connected_clients:
+            connected_clients.remove(client_name)
+            response = {"status": "success", "message": f"Client '{client_name}' disconnected successfully."}
+        else:
+            response = {"status": "error", "message": f"Client '{client_name}' is not registered."}
+    elif action == "remove_list":
         list_name = request.get("list_name")
         response = remove_list_from_server(list_name)
     elif action == "create_list":
@@ -110,11 +129,19 @@ def remove_list_from_server(list_name):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+def print_connected_clients():
+    while True:
+        print(f"Connected clients: {connected_clients}")
+        time.sleep(5)
+
 initialize_database("../server_database/lists.json")
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)
 socket.connect("tcp://localhost:5556")
+
+# Start the thread to print connected clients
+threading.Thread(target=print_connected_clients, daemon=True).start()
 
 try:
     while True:
