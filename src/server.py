@@ -3,6 +3,9 @@ import json
 import time
 import os
 import threading
+from core.CRDT.List_CRDT import List_CRDT
+
+CRDTS = {}
 
 def initialize_database(filepath):
     if not os.path.exists(filepath):
@@ -20,6 +23,12 @@ def update_files(lists_data):
             existing_data["lists"].extend(json.loads(lists_data)["lists"])
             lists_file.seek(0)
             json.dump(existing_data, lists_file, indent=4)
+            for list in existing_data:
+                crdt = List_CRDT(list["id"])
+                for item in list["items"]:
+                    element = {"Item": item["Item"], "Quantity": item["Quantity"]}
+                    crdt.add_item(element,-1)
+                CRDTS[crdt.list_id] = crdt
         return {"status": "success", "message": "Files updated successfully."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
