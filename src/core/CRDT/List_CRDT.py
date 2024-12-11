@@ -1,61 +1,78 @@
-from threading import *
 from core.CRDT.Interfaces.or_interface import OR_Set
 from core.CRDT.Items_CRDT import Items_CRDT
 
 class List_CRDT(OR_Set):
 
-    def __init__(self):
+    def __init__(self, list_id):
         self.add_set = {}
         self.remove_set = {}
-        self.items = {}
+        self.items = Items_CRDT()
+        self.list_id = list_id
+        self.timestamp = 0
 
     """
-        Element Structure:
-        id: (id of the list)
-        items: [] (array of item elements)
-        total_price: (price) 
+        Structure of Element -
+        element: {"Item": (item name), "Quantity": (n items)}
+
     """
     def add(self, element):
         return_flag = True
 
         try:
-            self.validate_element(element)
-            if element["id"] not in self.add_set:
-                self.add_set[element["id"]] = element
-                self.items[element["id"]] = Items_CRDT()
+            if element["Item"] not in self.add_set:
+                self.add_set[element["Item"]] = None
+                self.add_item(element,self.timestamp)
+                self.timestamp += 1
             else:
                 return_flag = False
+                print("Item already exists!")
         except Exception as e:
             print(e)
             return_flag = False
 
         return return_flag
     
-    def add_item(self, list_id, element, timestamp):
+    def add_item(self, element, timestamp):
         return_flag = True
         try:
-            self.items[list_id].add(element,timestamp)
+            self.items.add(element,timestamp)
         except Exception as e:
             print(e)
             return_flag = False
         
         return return_flag
 
-    def remove(self, element):
+    """
+    Element - Product being removed
+    Flag - Reason of removal (True being Purchased, False being Removed)
+    Program has a PURCHASE bias
+    """
+    def remove(self, element, flag):
         return_flag = True
-
+        
         try:
-            self.remove_set.add(element)
-        except:
+            if(flag is bool):
+                if element["Item"] not in self.remove_set:
+                    self.remove_set.add({element["Item"]: flag})
+                    self.remove_item(element,self.timestamp)
+                    self.timestamp += 1
+                else:
+                    if(flag):
+                        self.remove_set.add({element["Item"]: flag})
+            else:
+                raise ValueError("Flag must be either TRUE or FALSE")
+        except Exception as e:
+            print(e)
             return_flag = False
 
         return return_flag
     
-    def remove_item(self,list_id,element,timestamp):
+    def remove_item(self,element,timestamp):
         return_flag = True
         try:
-            self.items[list_id].remove(element,timestamp)
-        except:
+            self.items.remove(element,timestamp)
+        except Exception as e:
+            print(e)
             return_flag = False
 
         return return_flag
@@ -66,56 +83,21 @@ class List_CRDT(OR_Set):
         try:
             self.add_set = self.add_set.union(other_set.add_set)
             self.remove_set = self.remove_set.union(other_set.remove_set)
-            
-            for list_id, items in other_set.items.items():
-                if list_id in self.items:
-                    self.items[list_id].merge(items)
-                else:
-                    self.items[list_id] = items
-        except:
+            self.items.merge(other_set.items)
+        except Exception as e:
+            print(e)
             return_flag = False
 
         return return_flag
     
-    def validate_element(self, element):
+    def get_list(self):
+        set = []
+        for item in self.items.get():
+            if item["Item"] not in self.remove_set:
+                set.append(item)
+        
+        return set
 
-        if not isinstance(element, dict):
-            raise ValueError("Element must be a dictionary.")
-        
-        required_keys = {"id", "items", "total_price"}
-        if not required_keys.issubset(element.keys()):
-            raise ValueError(f"Element must contain the keys: {required_keys}")
-        
-        shopping_list_id = element.get("id")
-        if not isinstance(shopping_list_id, (str, int)) or (isinstance(shopping_list_id, str) and not shopping_list_id.strip()):
-            raise ValueError("'id' must be a non-empty string or an integer.")
-        
-        items = element.get("items")
-        #print(f"Validating items: {items} ({type(items)})")  # Debug: print items and type
-        if not isinstance(items, list):
-            raise ValueError("'items' must be a list.")
-        
-        for item in items:
-            # print(f"Validating item: {item} ({type(item)})")  # Debug: print each item and type
-            if isinstance(item, dict):
-                # Ensure the dictionary has required keys
-                if not {"Item", "Quantity"}.issubset(item.keys()):
-                    raise ValueError(f"Item {item} must contain 'Item' and 'Quantity' keys.")
-                if not isinstance(item["Item"], (str, int)) or (isinstance(item["Item"], str) and not item["Item"].strip()):
-                    raise ValueError(f"Item 'Item' field must be a non-empty string or integer in {item}.")
-                if not isinstance(item["Quantity"], int) or item["Quantity"] <= 0:
-                    raise ValueError(f"Item 'Quantity' field must be a positive integer in {item}.")
-            elif isinstance(item, (str, int)):
-                continue  # Allow plain strings/integers as valid items
-            else:
-                raise ValueError(f"Item '{item}' must be a dictionary, string, or integer.")
-            
-        total_price = element.get("total_price")
-        if not isinstance(total_price, (int, float)) or total_price < 0:
-            raise ValueError("'total_price' must be a non-negative number.")
-        
-        return element
-    
 
         
 

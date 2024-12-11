@@ -22,7 +22,7 @@ class Items_CRDT(LWW_Set):
     
     def validate_element(self, element):
 
-        #Check that elemen is a dict
+        #Check that element is a dict
         if not isinstance(element, dict):
             raise ValueError("Element must be a dictionary.")
     
@@ -86,7 +86,7 @@ class Items_CRDT(LWW_Set):
 
         try:
             if element["Item"] in self.remove_set:
-                current_timestamp = self.remove_set_set[element["Item"]]["timestamp"]
+                current_timestamp = self.remove_set[element["Item"]]["timestamp"]
                 if current_timestamp < timestamp:
                     self.remove_set[element["Item"]]["timestamp"] = timestamp
                     self.add_set[element["Item"]]["Quantity"] = element["Quantity"]
@@ -98,20 +98,18 @@ class Items_CRDT(LWW_Set):
         return return_flag
 
     def exist(self,element):
-        element = self.validate_element(element)
-
         if(element not in self.add_set):
             return False
         elif(element not in self.remove_set):
-            return True
-        elif self.add_set[element["Item"]]["Timestamp"] >= self.remove_set[element["Item"]]["Timestamp"]:
-            return True
-        else:
             return False
+        elif(self.add_set[element]['Quantity'] - self.remove_set[element]['Quantity'] < 0):
+            return False
+        else:
+            return True
 
     def get(self):
         set = []
-        for element in self.add:
+        for element in self.add_set:
             if(self.exist(element)):
                 set.append(element)
         return set
