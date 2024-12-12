@@ -8,8 +8,8 @@ from read_lists_items import add_new_item, remove_item_from_list, get_items_in_l
 
 def display_menu():
     print("\nAvailable Actions:")
-    print("1. Add or Update Item in List")
-    print("2. Remove Item from List")
+    print("1. Add or Inccrement Item in List")
+    print("2. Decrement Item from List")
     print("3. Get Items in List")
     print("4. Create New List")
     print("5. Remove List")
@@ -184,7 +184,8 @@ def client(client_name):
                             request = {
                                 "action": "update_list",
                                 "list_id": list_data["id"],
-                                "list_data": list_data
+                                "list_data": list_data,
+                                "operation": "add"
                             }
                             action_queue.append(request)
                     except Exception as e:
@@ -206,7 +207,8 @@ def client(client_name):
                             request = {
                                 "action": "update_list",
                                 "list_id": list_data["id"],
-                                "list_data": list_data
+                                "list_data": list_data,
+                                "operation": "remove"
                             }
                             action_queue.append(request)
                     except Exception as e:

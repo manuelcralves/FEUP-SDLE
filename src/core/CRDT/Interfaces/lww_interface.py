@@ -1,9 +1,4 @@
-import sys
-
-# Credits to @junjizhi for the model of the interface!
 class LWW_Set:
-    
-    MAX_STRING_IN_BYTES = 1 << 29  # 512 MB
 
     def __init__(self):
         pass

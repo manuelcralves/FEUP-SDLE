@@ -33,24 +33,44 @@ def update_files(lists_data):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+"""
+Utilize current CRDT state to update the Local Database
+"""
+def update_from_CRDT():
+    not NotImplemented("Not Implemented Yet!")
+
 def create_list_on_server(list_data):
     try:
         with open("../server_database/lists.json", "r+") as lists_file:
             existing_data = json.load(lists_file)
             existing_data["lists"].append(list_data)
             lists_file.seek(0)
+            crdt = List_CRDT(list_data["id"])
+            CRDTS[crdt.list_id] = crdt
             json.dump(existing_data, lists_file, indent=4)
         return {"status": "success", "message": f"List '{list_data['name']}' created successfully."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-def update_list_on_server(list_id, list_data):
+def update_list_on_server(list_id, list_data, operation):
     try:
         with open("../server_database/lists.json", "r+") as lists_file:
             existing_data = json.load(lists_file)
             for i, lst in enumerate(existing_data["lists"]):
                 if lst["id"] == list_id:
                     existing_data["lists"][i] = list_data
+                    for item in list_data:
+
+                        if operation == "add":
+                            if CRDTS[list_id].items.exists(item):
+                                CRDTS[list_id].add_item(item)
+                            else:
+                                CRDTS[list_id].add(item)
+                        elif operation == "remove":
+                            CRDTS[list_id].remove_item(item)
+                        else:
+                            raise KeyError("Operation must be 'Add' or 'Remove' ")
+
                     break
             else:
                 existing_data["lists"].append(list_data)
@@ -60,6 +80,9 @@ def update_list_on_server(list_id, list_data):
         return {"status": "success", "message": f"List with ID '{list_id}' updated successfully."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+def remove_item_from_list(list_id, item, purchased):
+    CRDTS[list_id].remove(item, purchased)
 
 connected_clients = []
 
@@ -89,9 +112,10 @@ def handle_request(request):
         list_data = request.get("list_data")
         response = create_list_on_server(list_data)
     elif action == "update_list":
+        operation = request.get("operation")
         list_id = request.get("list_id")
         list_data = request.get("list_data")
-        response = update_list_on_server(list_id, list_data)
+        response = update_list_on_server(list_id, list_data, operation)
     elif action == "join_list":
         list_id = request.get("list_id")
         response = join_list_on_server(list_id)
@@ -142,6 +166,17 @@ def print_connected_clients():
     while True:
         print(f"Connected clients: {connected_clients}")
         time.sleep(5)
+
+def merge_CRDTS(other_CRDTS):
+    for CRDT in CRDTS:
+        for other_CRDT in other_CRDTS:
+            if CRDT.list_id == other_CRDT.list_id:
+                CRDT.merge(other_CRDT)
+            elif other_CRDT.list_id not in CRDTS:
+                CRDTS[other_CRDT.list_id] = other_CRDT
+
+def send_CRDTS():
+    raise NotImplemented("Not Implemented Yet!")
 
 initialize_database("../server_database/lists.json")
 
