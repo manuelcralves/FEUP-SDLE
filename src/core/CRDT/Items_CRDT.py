@@ -100,22 +100,22 @@ class Items_CRDT(LWW_Set):
         return return_flag
 
     def exist(self,element):
+        return_flag = True
         if(element not in self.add_set):
-            return False
+            return_flag = False
         elif(element not in self.remove_set):
-            return False
-        elif(self.add_set[element]['Quantity'] - self.remove_set[element]['Quantity'] < 0):
-            return False
-        else:
-            return True
+                return_flag = False
+        elif(self.add_set[element]['Quantity'] - self.remove_set[element]['Quantity'] <= 0):
+                return_flag = False
+        return return_flag
 
     def get(self):
         set = []
         try:
             for element, data in self.add_set.items(): 
                 print("Element in add_set: ", element, "Data: ", data)
-                # if self.exist(element):
-                set.append({"Item": element, "Quantity": data["Quantity"]})
+                if self.exist(element):
+                    set.append({"Item": element, "Quantity": data["Quantity"]})
             print("Items_CRDT: ", set)
         except Exception as e:
             print(f"Error in get method: {e}")
