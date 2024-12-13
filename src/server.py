@@ -39,6 +39,25 @@ Utilize current CRDT state to update the Local Database
 def update_from_CRDT():
     not NotImplemented("Not Implemented Yet!")
 
+def save_crdts_to_file(file_path):
+
+    try:
+        crdt_data = {"lists": []}
+
+        for crdt_id, crdt in CRDTS.items():
+            crdt_data["lists"].append({
+                "id": crdt.list_id,
+                "items": crdt.get_list()  
+            })
+
+        with open(file_path, "w") as file:
+            json.dump(crdt_data, file, indent=4)
+
+        print(f"CRDTs saved to {file_path}")
+    except Exception as e:
+        print(f"Error saving CRDTs: {e}")
+
+
 def create_list_on_server(list_data):
     try:
         with open("../server_database/lists.json", "r+") as lists_file:
@@ -51,35 +70,54 @@ def create_list_on_server(list_data):
         return {"status": "success", "message": f"List '{list_data['name']}' created successfully."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
 
 def update_list_on_server(list_id, list_data, operation):
+    print(f"Update list {list_id} with data {list_data} and operation {operation}")
     try:
         with open("../server_database/lists.json", "r+") as lists_file:
             existing_data = json.load(lists_file)
+            print(f"Existing data: {existing_data}")
+            
             for i, lst in enumerate(existing_data["lists"]):
+                print(f"Check list {lst['id']}")
                 if lst["id"] == list_id:
                     existing_data["lists"][i] = list_data
-                    for item in list_data:
+                    print(f"Updated data: {existing_data}")
+
+                    for item in list_data.get("items", []):
+                        print(f"Processing item {item}")
+                        hashable_item = tuple(sorted(item.items()))  
 
                         if operation == "add":
-                            if CRDTS[list_id].items.exists(item):
-                                CRDTS[list_id].add_item(item)
+                            print(f"Adding item {hashable_item}")
+                            if CRDTS[list_id].items.exist(hashable_item):  
+                                CRDTS[list_id].add_item(item, CRDTS[list_id].timestamp)
                             else:
                                 CRDTS[list_id].add(item)
                         elif operation == "remove":
-                            CRDTS[list_id].remove_item(item)
+                            print(f"Removing item {hashable_item}")
+                            CRDTS[list_id].remove_item(item, CRDTS[list_id].timestamp)
                         else:
-                            raise KeyError("Operation must be 'Add' or 'Remove' ")
+                            raise KeyError("Operation must be 'add' or 'remove'.")
+                        
+                    
 
                     break
             else:
+
                 existing_data["lists"].append(list_data)
+
             lists_file.seek(0)
             lists_file.truncate()
             json.dump(existing_data, lists_file, indent=4)
+            save_crdts_to_file("crdts.json")
+
         return {"status": "success", "message": f"List with ID '{list_id}' updated successfully."}
     except Exception as e:
+        print(f"Error updating list: {e}")
         return {"status": "error", "message": str(e)}
+
     
 def remove_item_from_list(list_id, item, purchased):
     CRDTS[list_id].remove(item, purchased)
@@ -115,6 +153,7 @@ def handle_request(request):
         operation = request.get("operation")
         list_id = request.get("list_id")
         list_data = request.get("list_data")
+        print("Update list...")
         response = update_list_on_server(list_id, list_data, operation)
     elif action == "join_list":
         list_id = request.get("list_id")

@@ -68,6 +68,8 @@ class Items_CRDT(LWW_Set):
         except:
             return_flag = False
 
+        print(f"Added to Items_CRDT: {element} at timestamp {timestamp}")
+
         return return_flag
 
     """
@@ -89,7 +91,7 @@ class Items_CRDT(LWW_Set):
                 current_timestamp = self.remove_set[element["Item"]]["timestamp"]
                 if current_timestamp < timestamp:
                     self.remove_set[element["Item"]]["timestamp"] = timestamp
-                    self.add_set[element["Item"]]["Quantity"] = element["Quantity"]
+                    self.remove_set[element["Item"]]["Quantity"] = element["Quantity"]
             else:
                 self.remove_set[element["Item"]] = {"Quantity": element["Quantity"], "timestamp": timestamp}
         except:
@@ -109,11 +111,16 @@ class Items_CRDT(LWW_Set):
 
     def get(self):
         set = []
-        for element in self.add_set:
-            if(self.exist(element)):
-                set.append(element)
+        try:
+            for element, data in self.add_set.items(): 
+                print("Element in add_set: ", element, "Data: ", data)
+                # if self.exist(element):
+                set.append({"Item": element, "Quantity": data["Quantity"]})
+            print("Items_CRDT: ", set)
+        except Exception as e:
+            print(f"Error in get method: {e}")
         return set
-    
+
     def merge(self, other_set):
 
         return_flag = True

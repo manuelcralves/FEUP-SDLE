@@ -20,14 +20,17 @@ class List_CRDT(OR_Set):
 
         try:
             if element["Item"] not in self.add_set:
+                print(f"Adding new element: {element}")
                 self.add_set[element["Item"]] = None
                 self.add_item(element,self.timestamp)
+                print(f"Item added: {element} at timestamp {self.timestamp}")
                 self.timestamp += 1
             else:
                 return_flag = False
                 print("Item already exists!")
+                print(f"Attempted to add an existing item: {element}")
         except Exception as e:
-            print(e)
+            print(f"Error adding item: {e}")
             return_flag = False
 
         return return_flag
@@ -36,9 +39,11 @@ class List_CRDT(OR_Set):
         return_flag = True
         try:
             self.items.add(element,timestamp)
+            print(f"Item successfully added: {element} with timestamp {timestamp}")
         except Exception as e:
-            print(e)
+            print(f"Error adding item: {element}, error: {e}")
             return_flag = False
+
         
         return return_flag
 
@@ -55,6 +60,7 @@ class List_CRDT(OR_Set):
                 if element["Item"] not in self.remove_set:
                     self.remove_set.add({element["Item"]: flag})
                     self.remove_item(element,self.timestamp)
+                    print(f"Item removed: {element} with flag: {flag} at timestamp: {self.timestamp}")
                     self.timestamp += 1
                 else:
                     if(flag):
@@ -62,7 +68,7 @@ class List_CRDT(OR_Set):
             else:
                 raise ValueError("Flag must be either TRUE or FALSE")
         except Exception as e:
-            print(e)
+            print(f"Error removing item: {element}, error: {e}")
             return_flag = False
 
         return return_flag
@@ -71,8 +77,9 @@ class List_CRDT(OR_Set):
         return_flag = True
         try:
             self.items.remove(element,timestamp)
+            print(f"Item successfully removed: {element} at timestamp: {timestamp}")
         except Exception as e:
-            print(e)
+            print(f"Error in remove_item: {element}, timestamp: {timestamp}, error: {e}")
             return_flag = False
 
         return return_flag
@@ -81,22 +88,31 @@ class List_CRDT(OR_Set):
         return_flag = True
 
         try:
+            print(f"Starting merge operation with other_set: {other_set.list_id}")
             self.add_set = self.add_set.union(other_set.add_set)
             self.remove_set = self.remove_set.union(other_set.remove_set)
             self.items.merge(other_set.items)
+            print(f"Merge successful with other_set: {other_set.list_id}")
         except Exception as e:
-            print(e)
+            print(f"Error during merge with other_set: {other_set.list_id}, error: {e}")
             return_flag = False
 
         return return_flag
     
     def get_list(self):
-        set = []
-        for item in self.items.get():
-            if item["Item"] not in self.remove_set:
-                set.append(item)
-        
-        return set
+        result_set = []
+
+        try:
+            print("Starting get_list operation.")
+            for item in self.items.get():
+                print(f"Item: {item}")
+                if item["Item"] not in self.remove_set:
+                    result_set.append(item)
+            print(f"get_list result: {result_set}")
+        except Exception as e:
+            print(f"Error during get_list operation, error: {e}")
+
+        return result_set
 
 
         
