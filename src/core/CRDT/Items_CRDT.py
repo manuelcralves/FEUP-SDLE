@@ -58,7 +58,9 @@ class Items_CRDT(LWW_Set):
         return_flag = True
 
         try:
+            print("add_set: ", self.add_set)
             if element["Item"] in self.add_set:
+                print("Element in add_set: ", element["Item"])
                 current_timestamp = self.add_set[element["Item"]]["timestamp"]
                 if current_timestamp <= timestamp:
                     self.add_set[element["Item"]]["timestamp"] = timestamp
@@ -99,23 +101,38 @@ class Items_CRDT(LWW_Set):
         
         return return_flag
 
-    def exist(self,element):
-        return_flag = True
-        if(element not in self.add_set):
-            return_flag = False
-        elif(element not in self.remove_set):
-                return_flag = False
-        elif(self.add_set[element]['Quantity'] - self.remove_set[element]['Quantity'] <= 0):
-                return_flag = False
-        return return_flag
+    def exist(self, element):
+
+        if element not in self.add_set and element not in self.remove_set:
+            print("Element not in add_set or remove_set")
+            return False
+
+        # add_quantity = self.add_set[element]["Quantity"] if element in self.add_set else 0
+        # remove_quantity = self.remove_set[element]["Quantity"] if element in self.remove_set else 0
+
+        # if add_quantity - remove_quantity < 0:
+        elif(self.add_set[element["Item"]['Quantity']] - self.remove_set[element["Item"]['Quantity']] < 0):
+            print("Quantity is less than 0")
+            return False
+
+        print("Element exists")
+        return True
 
     def get(self):
         set = []
         try:
-            for element, data in self.add_set.items(): 
+            print("Starting get_list operation.")
+            for element, data in self.add_set.items():
+
                 print("Element in add_set: ", element, "Data: ", data)
+
                 if self.exist(element):
+
+                    # remove_quantity = self.remove_set[element]["Quantity"] if element in self.remove_set else 0
+                    # effective_quantity = data["Quantity"] - remove_quantity
+                    # set.append({"Item": element, "Quantity": effective_quantity})
                     set.append({"Item": element, "Quantity": data["Quantity"]})
+
             print("Items_CRDT: ", set)
         except Exception as e:
             print(f"Error in get method: {e}")
