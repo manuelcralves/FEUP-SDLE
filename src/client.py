@@ -129,16 +129,17 @@ def client(client_name):
     
     try:
         socket.send_json(ping_message)
-        if socket.poll(2000): 
+        poll = socket.poll(10000)
+        if poll: 
             response = socket.recv_json()
             if response["status"] != "success":
                 print("Server is offline. Please try again later.")
                 return
         else:
-            print("Server is offline. Please try again later.")
+            print("Server is offline.")
             return
-    except zmq.ZMQError:
-        print("Server is offline. Please try again later.")
+    except zmq.ZMQError as e:
+        print("Error: " + e)
         return
     
     registration_message = {
