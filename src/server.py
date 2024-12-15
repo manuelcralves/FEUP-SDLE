@@ -3,6 +3,7 @@ import json
 import time
 import os
 import threading
+from core.CRDT.List_CRDT import List_CRDT
 
 class Server:
 
@@ -16,7 +17,7 @@ class Server:
             self.context = zmq.Context()
             self.socket = self.context.socket(zmq.REP)
             self.repart_socket = self.context.socket(zmq.REQ)
-            self.CRDTs = []
+            self.CRDTS = {}
             self.broker_ports = broker_ports
 
     def get_ring(self, ring):
@@ -39,6 +40,13 @@ class Server:
                 self.existing_data["lists"].extend(json.loads(lists_data)["lists"])
                 lists_file.seek(0)
                 json.dump(self.existing_data, lists_file, indent=4)
+                for list in self.existing_data:
+                    crdt = List_CRDT(list["id"],list["name"])
+                    for item in list["items"]:
+                        element = {"Item": item["Item"], "Quantity": item["Quantity"]}
+                        crdt.add_item(element,-1)
+                    self.CRDTS[crdt.list_id] = crdt
+
             return {"status": "success", "message": "Files updated successfully."}
         except Exception as e:
             return {"status": "error", "message": str(e)}
@@ -49,12 +57,14 @@ class Server:
                 self.existing_data = json.load(lists_file)
                 self.existing_data["lists"].append(list_data)
                 lists_file.seek(0)
+                crdt = List_CRDT(list_data["id"],list_data["name"])
+                self.CRDTS[crdt.list_id] = crdt
                 json.dump(self.existing_data, lists_file, indent=4)
             return {"status": "success", "message": f"List '{list_data['name']}' created successfully."}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    def update_list_on_server(self,list_id, list_data):
+    def update_list_on_server(self,list_id, list_data,operation):
         try:
             list_found = False
             with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
@@ -63,22 +73,61 @@ class Server:
                     if lst["id"] == list_id:
                         list_found = True
                         existing_data["lists"][i] = list_data
-                        break
-                    #else:
-                        #existing_data["lists"].append(list_data)
+                        
+                        for item in list_data.get("items", []):
+                            print(f"Processing item {item}")  
+                            element = (item["Item"],item["Quantity"])
 
-                if(list_found == False):
-                    response = self.request_list_from_server(list_id)
-                    if(response.get("status") == "success"):
-                        data = response.get("list_data")
-                        print(data)
+                            if operation == "add":
+                                print(f"Adding item {element}")
+                                if self.CRDTS[list_id].items.exist(element):  
+                                    self.CRDTS[list_id].add_item(element, self.CRDTS[list_id].timestamp)
+                                else:
+                                    self.CRDTS[list_id].add(element)
+                            elif operation == "remove":
+                                print(f"Removing item {element}")
+                                self.CRDTS[list_id].remove_item(element, self.CRDTS[list_id].timestamp)
+                            else:
+                                raise KeyError("Operation must be 'add' or 'remove'.")
+                        break
+                    else:
+                        existing_data["lists"].append(list_data)
+
+                #if(list_found == False):
+                    #response = self.request_list_from_server(list_id)
+                    #if(response.get("status") == "success"):
+                        #data = response.get("list_data")
+                        #print(data)
                 lists_file.seek(0)
                 lists_file.truncate()
-                json.dump(existing_data, lists_file, indent=4)
+                #json.dump(existing_data, lists_file, indent=4)
+                self.save_crdts_to_file(f"../server_database/{self.name}/lists.json")
+                self.save_crdts_to_file(f"crdts.json")
             return {"status": "success", "message": f"List with ID '{list_id}' updated successfully."}
         except Exception as e:
             return {"status": "error", "message": str(e)}
         
+    def save_crdts_to_file(self,file_path):
+        try:
+            crdt_data = {"lists": []}
+
+            for crdt_id, crdt in self.CRDTS.items():
+                crdt_data["lists"].append({
+                    "id": crdt.list_id,
+                    "name": crdt.list_name,
+                    "items": crdt.get_list()  
+                })
+
+            with open(file_path, "w") as file:
+                json.dump(crdt_data, file, indent=4)
+
+            print(f"CRDTs saved to {file_path}")
+        except Exception as e:
+            print(f"Error saving CRDTs: {e}")
+
+    def remove_item_from_list(self,list_id, item, purchased):
+        self.CRDTS[list_id].remove(item, purchased)
+
     def get_list(self,list_id):
         list_found = False
         print(f"{self.name} - Getting List {list_id}!")
@@ -188,9 +237,10 @@ class Server:
             list_data = request.get("list_data")
             response = self.create_list_on_server(list_data)
         elif action == "update_list":
+            operation = request.get("operation")
             list_id = request.get("list_id")
             list_data = request.get("list_data")
-            response = self.update_list_on_server(list_id, list_data)
+            response = self.update_list_on_server(list_id, list_data, operation)
             #self.propagate_updates(list_data,list_id)
         elif action == "join_list":
             list_id = request.get("list_id")
@@ -206,8 +256,8 @@ class Server:
             response = self.get_list(list_id)
         else:
             response = {"status": "error", "message": "Invalid action. Please try again."}
-
-        print(f"[{self.name}] - Sending response: {response}")
+        time.sleep(1)
+        #print(f"[{self.name}] - Sending response: {response}")
         return response
 
     def check_update_on_server(self,list_id):
@@ -248,3 +298,15 @@ class Server:
         while True:
             print(f"[{self.name}] - Connected clients: {self.connected_clients}")
             time.sleep(5)
+
+    def merge_CRDTS(self,other_CRDTS):
+        for CRDT in self.CRDTS:
+            for other_CRDT in other_CRDTS:
+                if CRDT.list_id == other_CRDT.list_id:
+                    CRDT.merge(other_CRDT)
+                elif other_CRDT.list_id not in self.CRDTS:
+                    self.CRDTS[other_CRDT.list_id] = other_CRDT
+
+    def send_CRDTS():
+        raise NotImplemented("Not Implemented Yet!")
+

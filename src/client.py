@@ -185,7 +185,8 @@ def client(client_name):
                             request = {
                                 "action": "update_list",
                                 "list_id": list_data["id"],
-                                "list_data": list_data
+                                "list_data": list_data,
+                                "operation": "add"
                             }
                             action_queue.append(request)
                     except Exception as e:
@@ -207,7 +208,8 @@ def client(client_name):
                             request = {
                                 "action": "update_list",
                                 "list_id": list_data["id"],
-                                "list_data": list_data
+                                "list_data": list_data,
+                                "operation": "remove"
                             }
                             action_queue.append(request)
                     except Exception as e:
