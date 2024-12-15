@@ -52,7 +52,6 @@ For additional clients, replace `client1` with a unique name:
 
 ```
 python client.py client2
-``
 ```
 
 ### Notes
