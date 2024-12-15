@@ -117,7 +117,7 @@ def poll_single_list(list_id, socket, lists_file, stop_event):
         time.sleep(5)
 
 def client(client_name):
-    lists_file = f"../client_database/{client_name}/lists.json"
+    lists_file = f"./client_database/{client_name}/lists.json"
     initialize_database(lists_file)
     
     action_queue = []
@@ -174,7 +174,7 @@ def client(client_name):
                 list_name = input("Enter List Name: ")
                 item_id = input("Enter Item: ")
                 quantity = int(input("Enter Quantity: "))
-                status, result = add_new_item(list_name, item_id, lists_file, quantity)
+                status, result, mod = add_new_item(list_name, item_id, lists_file, quantity)
                 if status == 0:
                     print(result)
                     try:
@@ -186,7 +186,8 @@ def client(client_name):
                                 "action": "update_list",
                                 "list_id": list_data["id"],
                                 "list_data": list_data,
-                                "operation": "add"
+                                "operation": "add",
+                                "mod": mod
                             }
                             action_queue.append(request)
                     except Exception as e:
@@ -197,7 +198,7 @@ def client(client_name):
                 list_name = input("Enter List Name: ")
                 item_id = input("Enter Item: ")
                 quantity = int(input("Enter Quantity: "))
-                status, result = remove_item_from_list(list_name, item_id, lists_file, quantity)
+                status, result, mod = remove_item_from_list(list_name, item_id, lists_file, quantity)
                 if status == 0:
                     print(result)
                     try:
@@ -209,7 +210,8 @@ def client(client_name):
                                 "action": "update_list",
                                 "list_id": list_data["id"],
                                 "list_data": list_data,
-                                "operation": "remove"
+                                "operation": "remove",
+                                "mod": mod
                             }
                             action_queue.append(request)
                     except Exception as e:

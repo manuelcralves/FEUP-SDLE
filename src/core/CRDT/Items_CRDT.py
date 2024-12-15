@@ -70,7 +70,7 @@ class Items_CRDT(LWW_Set):
                     print(f"Updating element: {element[0]} with new timestamp {timestamp}")
                     self.add_set[element[0]]["timestamp"] = timestamp
                     # Atualiza a quantidade em vez de somar
-                    self.add_set[element[0]]["Quantity"] = element[1]
+                    self.add_set[element[0]]["Quantity"] += element[1]
                 else:
                     print(f"Skipping update for {element[0]}: current timestamp is newer.")
             else:
@@ -106,10 +106,9 @@ class Items_CRDT(LWW_Set):
                 current_timestamp = self.remove_set[element[0]]["timestamp"]
                 print("Current timestamp: ", current_timestamp)
                 print("New timestamp:", timestamp)
-                if current_timestamp < timestamp:
+                if current_timestamp <= timestamp:
                     self.remove_set[element[0]]["timestamp"] = timestamp
-                    self.remove_set[element[0]]["Quantity"] -= element["Quantity"]
-                    print("first if")
+                    self.remove_set[element[0]]["Quantity"] += element[1]
             else:
                 self.remove_set[element[0]] = {"Quantity": element[1], "timestamp": timestamp}
                 print("else")
@@ -150,7 +149,9 @@ class Items_CRDT(LWW_Set):
                     if element in self.remove_set:
                         print("Remove set", self.remove_set)
                         remove_quantity = self.remove_set[element]["Quantity"]
-                        result_set.append({"Item": element, "Quantity": remove_quantity})
+                        add_quantity = self.add_set[element]["Quantity"]
+                        effective_quantity = add_quantity - remove_quantity
+                        result_set.append({"Item": element, "Quantity": effective_quantity})
                     else:
                         result_set.append({"Item": element, "Quantity": data["Quantity"]})
 

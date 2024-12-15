@@ -35,7 +35,7 @@ class Server:
     
     def update_files(self,lists_data):
         try:
-            with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
+            with open(f"./server_database/{self.name}/lists.json", "r+") as lists_file:
                 self.existing_data = json.load(lists_file)
                 self.existing_data["lists"].extend(json.loads(lists_data)["lists"])
                 lists_file.seek(0)
@@ -53,7 +53,7 @@ class Server:
 
     def create_list_on_server(self,list_data):
         try:
-            with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
+            with open(f"./server_database/{self.name}/lists.json", "r+") as lists_file:
                 self.existing_data = json.load(lists_file)
                 self.existing_data["lists"].append(list_data)
                 lists_file.seek(0)
@@ -64,29 +64,42 @@ class Server:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    def update_list_on_server(self,list_id, list_data,operation):
+    def update_list_on_server(self,list_id, list_data,operation,mod):
         try:
             list_found = False
-            with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
+            with open(f"./server_database/{self.name}/lists.json", "r+") as lists_file:
                 existing_data = json.load(lists_file)
                 for i, lst in enumerate(existing_data["lists"]):
                     if lst["id"] == list_id:
                         list_found = True
+                        #dupe = existing_data["lists"][i]
+                        #print(f"Dupe - {dupe}")
                         existing_data["lists"][i] = list_data
                         
                         for item in list_data.get("items", []):
                             print(f"Processing item {item}")  
-                            element = (item["Item"],item["Quantity"])
+                            element = (item["Item"],mod["Quantity"])
 
                             if operation == "add":
-                                print(f"Adding item {element}")
-                                if self.CRDTS[list_id].items.exist(element):  
-                                    self.CRDTS[list_id].add_item(element, self.CRDTS[list_id].timestamp)
-                                else:
-                                    self.CRDTS[list_id].add(element)
+                                if(item["Item"] == mod["Item"]):
+                                    print(f"Adding item {element}")
+                                    if self.CRDTS[list_id].items.exist(element):  
+                                        self.CRDTS[list_id].add_item(element, self.CRDTS[list_id].timestamp)
+                                    else:
+                                        self.CRDTS[list_id].add(element)
                             elif operation == "remove":
-                                print(f"Removing item {element}")
-                                self.CRDTS[list_id].remove_item(element, self.CRDTS[list_id].timestamp)
+                                if(item["Item"] == mod["Item"]):
+                                    print(f"Removing item {element}")
+                                    """
+                                    print(f"Dupe:{dupe["items"][item["Item"]]}")
+                                    difference = dupe["items"][item["Item"]]["Quantity"]
+                                    print(f"Difference:{difference}")
+                                    eff = difference - item["quantity"]
+                                    print(f"Eff Difference: {eff}")
+                                    element = (item["Item"],eff)
+                                    print(f"Element:{element}")
+                                    """
+                                    self.CRDTS[list_id].remove_item(element, self.CRDTS[list_id].timestamp)
                             else:
                                 raise KeyError("Operation must be 'add' or 'remove'.")
                         break
@@ -101,7 +114,7 @@ class Server:
                 lists_file.seek(0)
                 lists_file.truncate()
                 #json.dump(existing_data, lists_file, indent=4)
-                self.save_crdts_to_file(f"../server_database/{self.name}/lists.json")
+                self.save_crdts_to_file(f"./server_database/{self.name}/lists.json")
                 self.save_crdts_to_file(f"crdts.json")
             return {"status": "success", "message": f"List with ID '{list_id}' updated successfully."}
         except Exception as e:
@@ -132,7 +145,7 @@ class Server:
         list_found = False
         print(f"{self.name} - Getting List {list_id}!")
         try:
-            with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
+            with open(f"./server_database/{self.name}/lists.json", "r+") as lists_file:
                 existing_data = json.load(lists_file)
                 for i, lst in enumerate(existing_data["lists"]):
                     if lst["id"] == list_id:
@@ -177,7 +190,7 @@ class Server:
             self.connected_clients = []
             # Start the thread to print connected clients
             threading.Thread(target=self.print_connected_clients, daemon=True).start()
-            self.initialize_database(f"../server_database/{self.name}/lists.json")
+            self.initialize_database(f"./server_database/{self.name}/lists.json")
             while(True):
                 if self.socket.poll(timeout=self.timeout):
                     request = self.socket.recv_json()
@@ -240,7 +253,8 @@ class Server:
             operation = request.get("operation")
             list_id = request.get("list_id")
             list_data = request.get("list_data")
-            response = self.update_list_on_server(list_id, list_data, operation)
+            mod = request.get("mod")
+            response = self.update_list_on_server(list_id, list_data, operation,mod)
             #self.propagate_updates(list_data,list_id)
         elif action == "join_list":
             list_id = request.get("list_id")
@@ -256,13 +270,12 @@ class Server:
             response = self.get_list(list_id)
         else:
             response = {"status": "error", "message": "Invalid action. Please try again."}
-        time.sleep(1)
         #print(f"[{self.name}] - Sending response: {response}")
         return response
 
     def check_update_on_server(self,list_id):
         try:
-            with open(f"../server_database/{self.name}/lists.json", "r") as lists_file:
+            with open(f"./server_database/{self.name}/lists.json", "r") as lists_file:
                 self.existing_data = json.load(lists_file)
                 for lst in self.existing_data["lists"]:
                     if lst["id"] == list_id:
@@ -273,7 +286,7 @@ class Server:
 
     def join_list_on_server(self,list_id):
         try:
-            with open(f"../server_database/{self.name}/lists.json", "r") as lists_file:
+            with open(f"./server_database/{self.name}/lists.json", "r") as lists_file:
                 self.existing_data = json.load(lists_file)
                 for lst in self.existing_data["lists"]:
                     if lst["id"] == list_id:
@@ -284,7 +297,7 @@ class Server:
 
     def remove_list_from_server(self,list_name):
         try:
-            with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
+            with open(f"./server_database/{self.name}/lists.json", "r+") as lists_file:
                 self.existing_data = json.load(lists_file)
                 self.existing_data["lists"] = [lst for lst in self.existing_data["lists"] if lst["name"] != list_name]
                 lists_file.seek(0)

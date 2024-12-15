@@ -84,7 +84,7 @@ class List_CRDT(OR_Set):
         try:
             
             self.items.remove(element,timestamp)
-            print(f"Item successfully removed: {element} at timestamp: {timestamp}")
+            print(f"Removed from Item: {element} at timestamp: {timestamp}")
         except Exception as e:
             print(f"Error in remove_item: {element}, timestamp: {timestamp}, error: {e}")
             return_flag = False

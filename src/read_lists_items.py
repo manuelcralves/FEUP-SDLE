@@ -21,14 +21,16 @@ def add_new_item(list_name, item_id, lists_file, quantity=1):
             for item in lst["items"]:
                 if item["Item"] == str(item_id):
                     item["Quantity"] += quantity
+                    mod = {"Item": str(item_id), "Quantity": quantity}
                     save_json(lists_file, lists_data)
-                    return 0, f"Item '{item_id}' in list '{list_name}' incremented by {quantity}."
+                    return 0, f"Item '{item_id}' in list '{list_name}' incremented by {quantity}.", mod
 
-            lst["items"].append({"Item": str(item_id), "Quantity": quantity})
+            mod = {"Item": str(item_id), "Quantity": quantity}
+            lst["items"].append(mod)
             save_json(lists_file, lists_data)
-            return 0, f"New item '{item_id}' added to list '{list_name}' with quantity {quantity}."
+            return 0, f"New item '{item_id}' added to list '{list_name}' with quantity {quantity}.", mod
 
-    return -1, f"List '{list_name}' not found. Please create it first."
+    return -1, f"List '{list_name}' not found. Please create it first.", None
 
 def create_list(list_name, lists_file):
     if not str(list_name):
@@ -68,13 +70,14 @@ def remove_item_from_list(list_name, item_id, lists_file, quantity=1):
             for item in lst["items"]:
                 if item["Item"] == str(item_id):
                     if item["Quantity"] >= quantity:
-                        item["Quantity"] -= quantity
+                        item["Quantity"] = quantity
+                        mod = {"Item": str(item_id), "Quantity": quantity}
                         save_json(lists_file, lists_data)
-                        return 0, f"{quantity} units of item '{item_id}' removed from list '{list_name}'."
+                        return 0, f"{quantity} units of item '{item_id}' removed from list '{list_name}'.", mod
                     else:
-                        return -1, f"Cannot remove {quantity} units. Only {item['Quantity']} available."
-            return -1, f"Item '{item_id}' not found in list '{list_name}'."
-    return -1, f"List '{list_name}' not found."
+                        return -1, f"Cannot remove {quantity} units. Only {item['Quantity']} available.", None
+            return -1, f"Item '{item_id}' not found in list '{list_name}'.", None
+    return -1, f"List '{list_name}' not found.", None
 
 def remove_list(list_name, lists_file):
     lists_data = load_json(lists_file)
