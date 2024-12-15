@@ -34,7 +34,7 @@ pip install pyzmq
 
 **Running the Broker**
 
-Start the broker by running the broker.py script in a terminal:
+Start the broker by running the `broker.py` script in a terminal:
 
 ```
 python broker.py
@@ -42,18 +42,18 @@ python broker.py
 
 **Running the Client**
 
-You can run multiple clients by executing the client.py script in separate terminal windows. Pass the client name as an argument when starting the client:
+You can run multiple clients by executing the `client.py` script in separate terminal windows. Pass the client name as an argument when starting the client:
 
 ```
 python client.py client1
 ```
 
-For additional clients, replace client1 with a unique name:
+For additional clients, replace `client1` with a unique name:
 
 ```
 python client.py client2
 ``
-
+```
 
 ### Notes
 
