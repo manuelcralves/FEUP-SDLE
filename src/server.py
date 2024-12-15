@@ -54,20 +54,21 @@ class Server:
     def update_list_on_server(self,list_id, list_data):
         try:
             with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
-                self.existing_data = json.load(lists_file)
-                for i, lst in enumerate(self.existing_data["lists"]):
+                existing_data = json.load(lists_file)
+                for i, lst in enumerate(existing_data["lists"]):
                     if lst["id"] == list_id:
-                        self.existing_data["lists"][i] = list_data
+                        existing_data["lists"][i] = list_data
                         break
-                    else:
-                        self.existing_data["lists"].append(list_data)
+                else:
+                    existing_data["lists"].append(list_data)
                 lists_file.seek(0)
                 lists_file.truncate()
-                json.dump(self.existing_data, lists_file, indent=4)
+                json.dump(existing_data, lists_file, indent=4)
             return {"status": "success", "message": f"List with ID '{list_id}' updated successfully."}
         except Exception as e:
-            response = self.request_list(list_id)
             return {"status": "error", "message": str(e)}
+
+
         
     def request_list(self, list_id):
         try:
@@ -185,7 +186,7 @@ class Server:
             list_id = request.get("list_id")
             list_data = request.get("list_data")
             response = self.update_list_on_server(list_id, list_data)
-            self.propagate_updates(list_data,list_id)
+            #self.propagate_updates(list_data,list_id)
         elif action == "join_list":
             list_id = request.get("list_id")
             response = self.join_list_on_server(list_id)
