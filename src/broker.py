@@ -6,7 +6,7 @@ import threading
 
 print("Building Server!")
 server1 = Server("Server1","5556",["4000"])
-#server2 = Server("Server2","5556",["4000"])
+server2 = Server("Server2","5556",["4000"])
 
 
 servers = [server1]
@@ -54,7 +54,10 @@ def answer_request(request):
                   req = {"action": "server_update", "list_data": list_data, "list_id": list_id}
                   replication.send_json(req)
 """
-    
+request = {"action": "get_ring", "ring": ring}
+for server in servers:
+    server.get_ring(ring)
+
 try:
     #print("Got here!")
     #threading.Thread(target=answer_request, daemon=True)

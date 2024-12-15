@@ -19,7 +19,10 @@ class Server:
             self.CRDTs = []
             self.broker_ports = broker_ports
 
-    
+    def get_ring(self, ring):
+        self.hashring = ring
+        print(f"Hashring: {self.hashring}")
+
     def initialize_database(self, filepath):
         if not os.path.exists(filepath):
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -53,67 +56,69 @@ class Server:
 
     def update_list_on_server(self,list_id, list_data):
         try:
+            list_found = False
             with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
                 existing_data = json.load(lists_file)
                 for i, lst in enumerate(existing_data["lists"]):
                     if lst["id"] == list_id:
+                        list_found = True
                         existing_data["lists"][i] = list_data
                         break
-                else:
-                    existing_data["lists"].append(list_data)
+                    #else:
+                        #existing_data["lists"].append(list_data)
+
+                if(list_found == False):
+                    response = self.request_list_from_server(list_id)
+                    if(response.get("status") == "success"):
+                        data = response.get("list_data")
+                        print(data)
                 lists_file.seek(0)
                 lists_file.truncate()
                 json.dump(existing_data, lists_file, indent=4)
             return {"status": "success", "message": f"List with ID '{list_id}' updated successfully."}
         except Exception as e:
             return {"status": "error", "message": str(e)}
-
-
         
-    def request_list(self, list_id):
+    def get_list(self,list_id):
+        list_found = False
+        print(f"{self.name} - Getting List {list_id}!")
         try:
-            request = {
-                "action": "fetch_list",
-                "list_id": list_id
-            }
+            with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
+                existing_data = json.load(lists_file)
+                for i, lst in enumerate(existing_data["lists"]):
+                    if lst["id"] == list_id:
+                        list_found = True
+                        return {"status": "success","list_id": list_id, "list_data": lst}
+                    
+                if (list_found == False):
+                    response = self.request_list_from_server(self,list_id)
+                    return response
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+    
+    def request_list_from_server(self, list_id):
+        self_key = self.hashring.hash(self.name)
+        sorted_keys = self.hashring.sorted_keys
+        next_key = -1;
+        i = 0
+        for key in sorted_keys:
+            if(key == self_key):
+                next_key = sorted_keys[i+1]
+                break
+        
+        if next_key != -1:
+            next_server = self.hashring.get_server(next_key)
+            server_addr = next_server.address
+            request = {"action": "request_list", "list_id": list_id}
+            self.repart_socket.connect(server_addr)
             self.repart_socket.send_json(request)
             response = self.repart_socket.recv_json()
             if(response.get("status") == "success"):
-                list = response.get("list")
-                self.create_list_on_server(list)
-            else:
-                raise FileNotFoundError(f"List with id '{list_id}' not found")
-        except Exception as e:
-            print(e)
-            return {"status": "error", "message": str(e)}
-    
-    def fetch(self,list_id):
-        list = None
-        try:
-            with open(f"../server_database/{self.name}/lists.json", "r+") as lists_file:
-                self.existing_data = json.load(lists_file)
-                for lst in self.existing_data["lists"]:
-                    if lst['id'] == list_id:
-                        list = lst
-                        break
-        except Exception as e:
-            print(e)
-            return {"status": "error", "message": str(e)}
-        if(list != None):
-            return {"status": "success", "list": list}
-        
-        return {"status": "error", "message": "List not found"}
-    
-    def propagate_updates(self,list_data, list_id):
-        try:
-            request = {
-                "action": "update_list",
-                "list_id": list_id,
-                "list_data": list_data
-            }
-            self.repart_socket.send_json(request)
-        except Exception as e:
-            print(e)
+                print(f"[{self.name}] - List with id {list_id} found!\n")
+                list_data = response.get("list_data")
+                return {"status": "success", "list_id": list_id, "list_data": list_data}
+            
+        return {"status": "error", "message": f"List with id {list_id} not found."}
 
     def run(self):
         print(f"[{self.name}] - Running Server")
@@ -145,14 +150,14 @@ class Server:
     def connect(self):
         self.socket.connect(self.address)
         for port in self.broker_ports:
-            self.socket.connect(f"tcp://localhost:{port}")
+            self.repart_socket.connect(f"tcp://localhost:{port}")
 
         print(f"[{self.name}] : Listening on port {self.port}")
 
     def disconnect(self):
         self.socket.disconnect(self.address)
         for port in self.broker_ports:
-            self.socket.disconnect(f"tcp://localhost:{port}")
+            self.repart_socket.disconnect(f"tcp://localhost:{port}")
 
         print(f"[{self.name}] : Disconnected from port {self.port}")
         
@@ -193,13 +198,12 @@ class Server:
         elif action == "check_update":
             list_id = request.get("list_id")
             response = self.check_update_on_server(list_id)
-        elif action == "fetch_list":
+        elif action == "get_ring":
+            ring = request.get("ring")
+            self.get_ring(ring)
+        elif action == "request_list":
             list_id = request.get("list_id")
-            response = self.fetch(list_id)
-        elif action == "server_update":
-            list_id = request.get("list_id")
-            list_data = request.get("list_data")
-            self.update_list_on_server(list_id,list_data)
+            response = self.get_list(list_id)
         else:
             response = {"status": "error", "message": "Invalid action. Please try again."}
 
