@@ -54,26 +54,36 @@ class Items_CRDT(LWW_Set):
     def add(self, element, timestamp):
         element = self.validate_element(element)
         timestamp = self.validate_timestamp(timestamp)
-        
-        return_flag = True
+
+        return_flag = True 
 
         try:
-            print("add_set: ", self.add_set)
-            print(f"Element: {element}")
+            print("Current add_set: ", self.add_set)
+            print(f"Processing element: {element}")
+
             if element[0] in self.add_set:
-                print("Element in add_set: ", element[0])
+                print(f"Element found in add_set: {element[0]}")
+
                 current_timestamp = self.add_set[element[0]]["timestamp"]
+
                 if current_timestamp <= timestamp:
+                    print(f"Updating element: {element[0]} with new timestamp {timestamp}")
                     self.add_set[element[0]]["timestamp"] = timestamp
-                    self.add_set[element[0]]["Quantity"] += element[1]
+                    # Atualiza a quantidade em vez de somar
+                    self.add_set[element[0]]["Quantity"] = element[1]
+                else:
+                    print(f"Skipping update for {element[0]}: current timestamp is newer.")
             else:
+                # Adiciona o elemento ao conjunto se não existir
+                print(f"Adding new element: {element[0]}")
                 self.add_set[element[0]] = {"Quantity": element[1], "timestamp": timestamp}
-        except:
+        except Exception as e:
+            print(f"Error while adding element: {e}")
             return_flag = False
 
-        print(f"Added to Items_CRDT: {element} at timestamp {timestamp}")
-
+        print(f"Final add_set after operation: {self.add_set}")
         return return_flag
+
 
     """
         Structure of Element -
@@ -91,12 +101,19 @@ class Items_CRDT(LWW_Set):
 
         try:
             if element[0] in self.remove_set:
+                print(f"Element found in remove_set: {element[0]}")
+                print("Quantity in remove_set: ", self.remove_set[element[0]]["Quantity"])
                 current_timestamp = self.remove_set[element[0]]["timestamp"]
+                print("Current timestamp: ", current_timestamp)
+                print("New timestamp:", timestamp)
                 if current_timestamp < timestamp:
                     self.remove_set[element[0]]["timestamp"] = timestamp
                     self.remove_set[element[0]]["Quantity"] -= element["Quantity"]
+                    print("first if")
             else:
                 self.remove_set[element[0]] = {"Quantity": element[1], "timestamp": timestamp}
+                print("else")
+                
         except:
             return_flag = False
         
@@ -121,25 +138,28 @@ class Items_CRDT(LWW_Set):
         return True
 
     def get(self):
-        set = []
+        result_set = []
         try:
             print("Starting get_list operation.")
+            
             for element, data in self.add_set.items():
-                print(f"Element in add_set: {element}\nData: {data}\n\n")
+                print(f"Processing element: {element}")
+                print(f"Data in add_set: {data}\n")
 
                 if self.exist(element):
-
                     if element in self.remove_set:
+                        print("Remove set", self.remove_set)
                         remove_quantity = self.remove_set[element]["Quantity"]
-                        effective_quantity = data["Quantity"] - remove_quantity
-                        set.append({"Item": element, "Quantity": effective_quantity})
+                        result_set.append({"Item": element, "Quantity": remove_quantity})
                     else:
-                        set.append({"Item": element, "Quantity": data["Quantity"]})
+                        result_set.append({"Item": element, "Quantity": data["Quantity"]})
 
-            print("Items_CRDT: ", set)
+            print("Final Items_CRDT:", result_set)
         except Exception as e:
             print(f"Error in get method: {e}")
-        return set
+
+        return result_set
+
 
     def merge(self, other_set):
 
