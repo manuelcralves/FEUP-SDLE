@@ -23,23 +23,23 @@ class Items_CRDT(LWW_Set):
     def validate_element(self, element):
 
         #Check that element is a dict
-        if not isinstance(element, dict):
-            raise ValueError("Element must be a dictionary.")
+        if not isinstance(element, tuple):
+            raise ValueError("Element must be a tuple.")
     
-        # Check for required keys
-        required_keys = {"Item", "Quantity"}
-        if not required_keys.issubset(element.keys()):
-            raise ValueError(f"Element must contain the keys: {required_keys}")
+        # Check for length
+        length = len(element)
+        if length != 2:
+            raise ValueError(f"Element must be of length 2")
         
         # Validate the "Item" field
-        item = element.get("Item")
+        item = element[0]
         if not isinstance(item, str) or not item.strip():
-            raise ValueError("The 'Item' field must be a non-empty string.")
+            raise ValueError("The first position of the tuple must be a str")
         
         # Validate the "Quantity" field
-        quantity = element.get("Quantity")
+        quantity = element[1]
         if not isinstance(quantity, int) or quantity < 0:
-            raise ValueError("The 'Quantity' field must be a non-negative integer.")
+            raise ValueError("The second position of the tuple must be a non-negative integer")
         
         return element
 
@@ -59,14 +59,15 @@ class Items_CRDT(LWW_Set):
 
         try:
             print("add_set: ", self.add_set)
-            if element["Item"] in self.add_set:
-                print("Element in add_set: ", element["Item"])
-                current_timestamp = self.add_set[element["Item"]]["timestamp"]
+            print(f"Element: {element}")
+            if element[0] in self.add_set:
+                print("Element in add_set: ", element[0])
+                current_timestamp = self.add_set[element[0]]["timestamp"]
                 if current_timestamp <= timestamp:
-                    self.add_set[element["Item"]]["timestamp"] = timestamp
-                    self.add_set[element["Item"]]["Quantity"] = element["Quantity"]
+                    self.add_set[element[0]]["timestamp"] = timestamp
+                    self.add_set[element[0]]["Quantity"] = element[1]
             else:
-                self.add_set[element["Item"]] = {"Quantity": element["Quantity"], "timestamp": timestamp}
+                self.add_set[element[0]] = {"Quantity": element[1], "timestamp": timestamp}
         except:
             return_flag = False
 
@@ -89,29 +90,30 @@ class Items_CRDT(LWW_Set):
         return_flag = True
 
         try:
-            if element["Item"] in self.remove_set:
-                current_timestamp = self.remove_set[element["Item"]]["timestamp"]
+            if element[0] in self.remove_set:
+                current_timestamp = self.remove_set[element[0]]["timestamp"]
                 if current_timestamp < timestamp:
-                    self.remove_set[element["Item"]]["timestamp"] = timestamp
-                    self.remove_set[element["Item"]]["Quantity"] = element["Quantity"]
+                    self.remove_set[element[0]]["timestamp"] = timestamp
+                    self.remove_set[element[0]]["Quantity"] = element["Quantity"]
             else:
-                self.remove_set[element["Item"]] = {"Quantity": element["Quantity"], "timestamp": timestamp}
+                self.remove_set[element[0]] = {"Quantity": element[1], "timestamp": timestamp}
         except:
             return_flag = False
         
         return return_flag
 
     def exist(self, element):
-
         if element not in self.add_set and element not in self.remove_set:
             print("Element not in add_set or remove_set")
             return False
 
         # add_quantity = self.add_set[element]["Quantity"] if element in self.add_set else 0
         # remove_quantity = self.remove_set[element]["Quantity"] if element in self.remove_set else 0
-
+        elif element in self.add_set and element not in self.remove_set:
+            print("Element do exist!")
+            return True
         # if add_quantity - remove_quantity < 0:
-        elif(self.add_set[element["Item"]['Quantity']] - self.remove_set[element["Item"]['Quantity']] < 0):
+        elif(self.add_set[element]['Quantity'] - self.remove_set[element]['Quantity'] < 0):
             print("Quantity is less than 0")
             return False
 
@@ -123,15 +125,16 @@ class Items_CRDT(LWW_Set):
         try:
             print("Starting get_list operation.")
             for element, data in self.add_set.items():
-
-                print("Element in add_set: ", element, "Data: ", data)
+                print(f"Element in add_set: {element}\nData: {data}\n\n")
 
                 if self.exist(element):
 
-                    # remove_quantity = self.remove_set[element]["Quantity"] if element in self.remove_set else 0
-                    # effective_quantity = data["Quantity"] - remove_quantity
-                    # set.append({"Item": element, "Quantity": effective_quantity})
-                    set.append({"Item": element, "Quantity": data["Quantity"]})
+                    if element in self.remove_set:
+                        remove_quantity = self.remove_set[element]["Quantity"]
+                        effective_quantity = data["Quantity"] - remove_quantity
+                        set.append({"Item": element, "Quantity": effective_quantity})
+                    else:
+                        set.append({"Item": element, "Quantity": data["Quantity"]})
 
             print("Items_CRDT: ", set)
         except Exception as e:

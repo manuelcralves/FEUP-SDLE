@@ -13,15 +13,19 @@ class List_CRDT(OR_Set):
     """
         Structure of Element -
         element: {"Item": (item name), "Quantity": (n items)}
+        element(tuple): ("ItemName","Quantity","Purchased")
+        ItemName - Nome
+        Quantity - Quantidade
+        Purchased - Flag
 
     """
     def add(self, element):
         return_flag = True
 
         try:
-            if element["Item"] not in self.add_set:
+            if element[0] not in self.add_set:
                 print(f"Adding new element: {element}")
-                self.add_set[element["Item"]] = None
+                self.add_set[element[0]] = None
                 self.add_item(element,self.timestamp)
                 print(f"Item added: {element} at timestamp {self.timestamp}")
                 self.timestamp += 1
@@ -29,6 +33,7 @@ class List_CRDT(OR_Set):
                 return_flag = False
                 print("Item already exists!")
                 print(f"Attempted to add an existing item: {element}")
+                self.add_item(element,self.timestamp)
         except Exception as e:
             print(f"Error adding item: {e}")
             return_flag = False
@@ -57,14 +62,14 @@ class List_CRDT(OR_Set):
         
         try:
             if(flag is bool):
-                if element["Item"] not in self.remove_set:
-                    self.remove_set.add({element["Item"]: flag})
+                if element[0] not in self.remove_set:
+                    self.remove_set.add({element[0]: flag})
                     self.remove_item(element,self.timestamp)
                     print(f"Item removed: {element} with flag: {flag} at timestamp: {self.timestamp}")
                     self.timestamp += 1
                 else:
                     if(flag):
-                        self.remove_set.add({element["Item"]: flag})
+                        self.remove_set.add({element[0]: flag})
             else:
                 raise ValueError("Flag must be either TRUE or FALSE")
         except Exception as e:

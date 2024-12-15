@@ -87,16 +87,17 @@ def update_list_on_server(list_id, list_data, operation):
 
                     for item in list_data.get("items", []):
                         print(f"Processing item {item}")  
+                        element = (item["Item"],item["Quantity"])
 
                         if operation == "add":
-                            print(f"Adding item {item}")
-                            if CRDTS[list_id].items.exist(item):  
-                                CRDTS[list_id].add_item(item, CRDTS[list_id].timestamp)
+                            print(f"Adding item {element}")
+                            if CRDTS[list_id].items.exist(element):  
+                                CRDTS[list_id].add_item(element, CRDTS[list_id].timestamp)
                             else:
-                                CRDTS[list_id].add(item)
+                                CRDTS[list_id].add(element)
                         elif operation == "remove":
-                            print(f"Removing item {item}")
-                            CRDTS[list_id].remove_item(item, CRDTS[list_id].timestamp)
+                            print(f"Removing item {element}")
+                            CRDTS[list_id].remove_item(element, CRDTS[list_id].timestamp)
                         else:
                             raise KeyError("Operation must be 'add' or 'remove'.")
                         
